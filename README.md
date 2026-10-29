@@ -45,7 +45,7 @@ API types: after changing a back-end schema, run `python backend/openapi_export.
 
 ## Config
 
-All settings are environment variables; see `.env.example` and `backend/app/settings.py`. The UI follows the group
+All settings are environment variables; see `.env.example` and `backend/app/core/config.py`. The UI follows the group
 standard: `GET /api/config` returns `{ apiBase, basePath, publicUrl, frameParents, login: { enabled, issuer, clientId }, site }`,
 and every response sends `Content-Security-Policy: frame-ancestors 'self' $FRAME_ANCESTORS`.
 
