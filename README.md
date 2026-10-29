@@ -41,6 +41,8 @@ docker compose up -d --build
 
 UI development: `cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json` (forwards `/api` to a backend on `localhost:8000`).
 
+Back end: Python 3.12 (as in `backend/Dockerfile`); lint and format with `ruff check --fix backend && ruff format backend` (settings in `ruff.toml`).
+
 API types: after changing a back-end schema, run `python backend/openapi_export.py` and then `cd ui && npm run api-types`; the UI imports the named types from `src/app/core/api.ts`.
 
 ## Config

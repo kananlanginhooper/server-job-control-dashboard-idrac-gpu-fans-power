@@ -8,6 +8,7 @@ POST /api/v1/servers/{host}/gpu-limit     {"w": watts, "index": 0}           (sa
 GET  /healthz
 Anything else under /api/ goes to SJC_LEGACY_API when it is set (the classic dashboard), so the UI's other cards work.
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -43,7 +44,7 @@ def create_app(start_mqtt: bool = True) -> FastAPI:
 
     app.include_router(config.router)
     app.include_router(servers.router)
-    app.include_router(legacy.router)   # last: its /api/{path} catches what the others don't
+    app.include_router(legacy.router)  # last: its /api/{path} catches what the others don't
     return app
 
 

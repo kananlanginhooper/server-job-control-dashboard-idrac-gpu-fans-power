@@ -1,4 +1,5 @@
 """The latest of every part each agent publishes, plus the command/result round trip, over one MQTT connection."""
+
 from __future__ import annotations
 
 import asyncio
@@ -22,7 +23,7 @@ class CommandError(Exception):
 class MqttHub:
     def __init__(self, settings: Settings):
         self.s = settings
-        self.servers: dict[str, dict] = {}            # host -> part -> payload (+ "_at": part -> receive time)
+        self.servers: dict[str, dict] = {}  # host -> part -> payload (+ "_at": part -> receive time)
         self.connected, self.since = False, None
         self._waiters: dict[str, tuple[threading.Event, dict]] = {}
         self._client: mqtt.Client | None = None
@@ -77,7 +78,11 @@ class MqttHub:
         if s is None:
             return None
         now = time.time()
-        return {"host": host, **{p: s.get(p) for p in PARTS}, "age_s": {p: round(now - t, 1) for p, t in s["_at"].items()}}
+        return {
+            "host": host,
+            **{p: s.get(p) for p in PARTS},
+            "age_s": {p: round(now - t, 1) for p, t in s["_at"].items()},
+        }
 
     def all(self) -> dict:
         return {"at": time.time(), "mqtt": self.connected, "servers": {h: self.view(h) for h in sorted(self.servers)}}
@@ -93,7 +98,9 @@ class MqttHub:
         ev, res = threading.Event(), {}
         self._waiters[cid] = (ev, res)
         try:
-            self._client.publish(f"{self.s.mqtt_prefix}/{host}/cmd/{name}", json.dumps(body | {"id": cid, "by": by}), qos=1)
+            self._client.publish(
+                f"{self.s.mqtt_prefix}/{host}/cmd/{name}", json.dumps(body | {"id": cid, "by": by}), qos=1
+            )
             ok = await asyncio.to_thread(ev.wait, timeout)
         finally:
             self._waiters.pop(cid, None)

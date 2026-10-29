@@ -1,4 +1,5 @@
 """Write the API's OpenAPI document to backend/openapi.json (the UI generates its types from it: npm run api-types)."""
+
 import json
 from pathlib import Path
 

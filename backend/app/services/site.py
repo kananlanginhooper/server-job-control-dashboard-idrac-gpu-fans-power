@@ -16,6 +16,10 @@ def load_site(path: str) -> dict:
 
 
 def app_config(s: Settings) -> AppConfig:
-    return AppConfig(basePath=s.ui_base_path, publicUrl=s.public_url, frameParents=s.frame_ancestors.split(),
-                     login=Login(enabled=s.login == "on", issuer=s.oidc_issuer, clientId=s.oidc_client_id),
-                     site=load_site(s.site_file))
+    return AppConfig(
+        basePath=s.ui_base_path,
+        publicUrl=s.public_url,
+        frameParents=s.frame_ancestors.split(),
+        login=Login(enabled=s.login == "on", issuer=s.oidc_issuer, clientId=s.oidc_client_id),
+        site=load_site(s.site_file),
+    )

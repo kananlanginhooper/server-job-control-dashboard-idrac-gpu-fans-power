@@ -18,8 +18,15 @@ async def legacy(path: str, req: Request, s: Settings = Depends(get_settings)):
     if req.method == "POST":
         lan_only(req, s)
     try:
-        r = await forward(req.app.state.http, s.legacy_base, req.method, path, req.query_params, req.headers,
-                          await req.body() if req.method == "POST" else None)
+        r = await forward(
+            req.app.state.http,
+            s.legacy_base,
+            req.method,
+            path,
+            req.query_params,
+            req.headers,
+            await req.body() if req.method == "POST" else None,
+        )
     except httpx.HTTPError as e:
-        raise HTTPException(502, f"legacy API unreachable: {e.__class__.__name__}")
+        raise HTTPException(502, f"legacy API unreachable: {e.__class__.__name__}") from e
     return Response(r.content, r.status_code, response_headers(r))

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -10,13 +10,13 @@ PARTS = ("status", "idrac", "power", "gpu", "safety", "runlevel", "system")
 
 class ServerView(BaseModel):
     host: str
-    status: Optional[str] = Field(None, description='"online" / "offline" (the agent\'s last will)')
-    idrac: Optional[dict[str, Any]] = None
-    power: Optional[dict[str, Any]] = None
-    gpu: Optional[dict[str, Any]] = None
-    safety: Optional[dict[str, Any]] = None
-    runlevel: Optional[dict[str, Any]] = None
-    system: Optional[dict[str, Any]] = None
+    status: str | None = Field(None, description='"online" / "offline" (the agent\'s last will)')
+    idrac: dict[str, Any] | None = None
+    power: dict[str, Any] | None = None
+    gpu: dict[str, Any] | None = None
+    safety: dict[str, Any] | None = None
+    runlevel: dict[str, Any] | None = None
+    system: dict[str, Any] | None = None
     age_s: dict[str, float] = Field(default_factory=dict, description="seconds since each part last arrived")
 
 
@@ -28,7 +28,7 @@ class ServersResponse(BaseModel):
 
 class MqttState(BaseModel):
     connected: bool = False
-    since: Optional[float] = None
+    since: float | None = None
 
 
 class Health(BaseModel):
@@ -39,7 +39,8 @@ class Health(BaseModel):
 
 class FanCommand(BaseModel):
     """Either a manual fan speed for every fan, or back to the iDRAC's automatic curve."""
-    pct: Optional[int] = Field(None, ge=1, le=100)
+
+    pct: int | None = Field(None, ge=1, le=100)
     auto: bool = False
 
     @model_validator(mode="after")
@@ -56,9 +57,10 @@ class GpuLimitCommand(BaseModel):
 
 class CommandResult(BaseModel):
     """The agent's reply; extra fields (pct, until, mode, w, ...) depend on the command."""
+
     model_config = {"extra": "allow"}
     ok: bool
-    id: Optional[str] = None
-    cmd: Optional[str] = None
-    at: Optional[float] = None
-    error: Optional[str] = None
+    id: str | None = None
+    cmd: str | None = None
+    at: float | None = None
+    error: str | None = None

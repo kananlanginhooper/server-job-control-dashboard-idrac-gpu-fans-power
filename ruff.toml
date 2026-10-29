@@ -1,0 +1,8 @@
+# Back-end lint + format (ruff check --fix backend && ruff format backend)
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+# B008: FastAPI's Depends()/Query() defaults are the framework's idiom, not a shared mutable default
+ignore = ["B008", "E501"]   # E501: ruff format wraps code; long doc lines stay

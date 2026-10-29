@@ -4,6 +4,7 @@ The agents that publish to MQTT live in the services repo; their topics and JSON
 https://github.com/kananlanginhooper/server-job-control-services-idrac-gpu-fans-power/blob/ae58de0/contracts/mqtt-topics.md (version 1)
   machine-readable: https://github.com/kananlanginhooper/server-job-control-services-idrac-gpu-fans-power/blob/ae58de0/contracts/mqtt-topics.json
 """
+
 from __future__ import annotations
 
 from functools import lru_cache

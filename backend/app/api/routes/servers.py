@@ -1,10 +1,19 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ...schemas.servers import PARTS, CommandResult, FanCommand, GpuLimitCommand, Health, MqttState, ServersResponse, ServerView
+from ...schemas.servers import (
+    PARTS,
+    CommandResult,
+    FanCommand,
+    GpuLimitCommand,
+    Health,
+    MqttState,
+    ServersResponse,
+    ServerView,
+)
 from ...services.mqtt_hub import CommandError, MqttHub
 from ..deps import hub, lan_only
 
@@ -30,7 +39,7 @@ def one_server(host: str, h: MqttHub = Depends(hub)):
     return v
 
 
-@router.get("/api/v1/servers/{host}/{part}", response_model=Optional[Any])
+@router.get("/api/v1/servers/{host}/{part}", response_model=Any | None)
 def one_part(host: str, part: str, h: MqttHub = Depends(hub)):
     if part not in PARTS:
         raise HTTPException(404, f"unknown part {part}")
@@ -44,7 +53,7 @@ async def _command(h: MqttHub, host: str, name: str, body: dict, by: str) -> dic
     try:
         return await h.command(host, name, body, by)
     except CommandError as e:
-        raise HTTPException(e.status, e.message)
+        raise HTTPException(e.status, e.message) from e
 
 
 @router.post("/api/v1/servers/{host}/fans", response_model=CommandResult)
