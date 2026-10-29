@@ -9,7 +9,11 @@ import { RANGES } from './format';
   host: { class: 'grange' },
   template: `<span class="sub">All graphs</span>
     <div class="seg ranges" role="group" aria-label="Time range for all graphs">
-      @for (r of RANGES; track r[0]) { <button [attr.aria-pressed]="store.range() === r[0]" (click)="store.setRange(r[0])">{{ r[1] }}</button> }
+      @for (r of RANGES; track r[0]) {
+        <button [attr.aria-pressed]="store.range() === r[0]" (click)="store.setRange(r[0])">
+          {{ r[1] }}
+        </button>
+      }
     </div>`,
 })
 export class RangeSeg {

@@ -3,20 +3,32 @@
 // the shadow root. Accent: the dashboard's existing blue.
 @use '@angular/material' as mat;
 
-:root { --app-accent: light-dark(#2f6fdb, #5b93f0); }
+:root {
+  --app-accent: light-dark(#2f6fdb, #5b93f0);
+}
 
 // compact controls, the size the hand-made ones had (about 30 px tall); the chosen run profile in the accent color
 html {
-  @include mat.button-overrides((
-    outlined-container-height: 30px, filled-container-height: 30px,
-    outlined-horizontal-padding: 10px, filled-horizontal-padding: 10px,
-  ));
-  @include mat.button-toggle-overrides((
-    height: 30px,
-    selected-state-background-color: var(--app-accent),
-    selected-state-text-color: light-dark(#fff, #0f1318),
-  ));
+  @include mat.button-overrides(
+    (
+      outlined-container-height: 30px,
+      filled-container-height: 30px,
+      outlined-horizontal-padding: 10px,
+      filled-horizontal-padding: 10px,
+    )
+  );
+  @include mat.button-toggle-overrides(
+    (
+      height: 30px,
+      selected-state-background-color: var(--app-accent),
+      selected-state-text-color: light-dark(#fff, #0f1318),
+    )
+  );
 }
 
 // multi-line hover text (matTooltipClass="pre-tip")
-.pre-tip .mat-mdc-tooltip-surface { white-space: pre-line; max-width: 420px; text-align: left; }
+.pre-tip .mat-mdc-tooltip-surface {
+  white-space: pre-line;
+  max-width: 420px;
+  text-align: left;
+}

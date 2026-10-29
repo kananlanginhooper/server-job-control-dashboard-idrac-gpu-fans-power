@@ -3,18 +3,44 @@
   @if (v(); as v) {
     <div class="fstat">
       <app-host-status [name]="S.main" [st]="v.st730" />
-      <div class="fhost-wrap" [title]="v.gpuTip" style="cursor:help">
+      <div class="fhost-wrap" [title]="v.gpuTip" style="cursor: help">
         <app-host-status [name]="S.node" [st]="v.st720" />
-        @if (v.gpuPaused) { <div class="fwhy warnc">GPU jobs paused for Low Power: {{ v.gpuPaused }} (resume when Low Power is switched off)</div> }
+        @if (v.gpuPaused) {
+          <div class="fwhy warnc">
+            GPU jobs paused for Low Power: {{ v.gpuPaused }} (resume when Low Power is switched off)
+          </div>
+        }
       </div>
     </div>
-    <app-control-toggles [qc]="v.qc" [meeting]="v.mt.want" [gpuOff]="v.gpuOff" [busy]="store.busy()"
-                         (quickCool)="store.quickCool()" (meetingMode)="store.meeting()" (gpu)="store.gpu()" />
-    @if (v.hold) { <div class="row"><span class="pill queued">plan</span><span class="muted">{{ v.hold }}</span></div> }
-    <app-run-profile [buttons]="v.rpButtons" [warn]="v.rpWarn" [override]="v.override" [busy]="store.busy().rp"
-                     (choose)="store.runProfile($event.p, $event.w)" />
-    @if (v.qc) { <div class="row" [innerHTML]="v.qcText"></div> }
-    @if (v.mt.want || v.mt.turning) { <div class="row"><span>Meeting Mode:</span><span [innerHTML]="v.mt.text"></span></div> }
+    <app-control-toggles
+      [qc]="v.qc"
+      [meeting]="v.mt.want"
+      [gpuOff]="v.gpuOff"
+      [busy]="store.busy()"
+      (quickCool)="store.quickCool()"
+      (meetingMode)="store.meeting()"
+      (gpu)="store.gpu()"
+    />
+    @if (v.hold) {
+      <div class="row">
+        <span class="pill queued">plan</span><span class="muted">{{ v.hold }}</span>
+      </div>
+    }
+    <app-run-profile
+      [buttons]="v.rpButtons"
+      [warn]="v.rpWarn"
+      [override]="v.override"
+      [busy]="store.busy().rp"
+      (choose)="store.runProfile($event.p, $event.w)"
+    />
+    @if (v.qc) {
+      <div class="row" [innerHTML]="v.qcText"></div>
+    }
+    @if (v.mt.want || v.mt.turning) {
+      <div class="row"><span>Meeting Mode:</span><span [innerHTML]="v.mt.text"></span></div>
+    }
   }
 </div>
-@if (charts(); as c) { <app-power-charts [charts]="c" /> }
+@if (charts(); as c) {
+  <app-power-charts [charts]="c" />
+}

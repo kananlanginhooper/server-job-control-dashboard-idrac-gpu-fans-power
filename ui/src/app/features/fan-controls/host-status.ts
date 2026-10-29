@@ -7,12 +7,18 @@ import { HostStatus } from './fan-controls.model';
   selector: 'app-host-status',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatTooltip],
-  template: `
-    <div class="fhost" [matTooltip]="st().tip" matTooltipClass="pre-tip" style="cursor:help">
-      <span class="fhn">{{ name() }}</span>
-      <span class="fmode m-{{ st().k }}" [matTooltip]="st().modeTip">{{ st().label }}</span>
-      @if (st().pct != null) { <span class="fpct">fans {{ st().pct }}% <span class="muted">ⓘ</span></span> }
-    </div>`,
+  template: ` <div
+    class="fhost"
+    [matTooltip]="st().tip"
+    matTooltipClass="pre-tip"
+    style="cursor:help"
+  >
+    <span class="fhn">{{ name() }}</span>
+    <span class="fmode m-{{ st().k }}" [matTooltip]="st().modeTip">{{ st().label }}</span>
+    @if (st().pct != null) {
+      <span class="fpct">fans {{ st().pct }}% <span class="muted">ⓘ</span></span>
+    }
+  </div>`,
 })
 export class HostStatusView {
   readonly name = input.required<string>();

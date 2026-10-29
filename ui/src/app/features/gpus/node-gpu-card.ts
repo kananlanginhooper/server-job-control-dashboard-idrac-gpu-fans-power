@@ -10,13 +10,24 @@ import { NodeGpuView } from './gpus.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [KpiRow, ChartTile],
   host: { class: 'server', '[class.srv-red]': 'v().hot' },
-  template: `
-    @let g = v();
-    <h3>{{ S.nodeGpu }} <span class="pill done">live</span>@if (g.hot) {<span class="pill failed">1 red</span>}<span class="role">in {{ S.node }} · <span id="gpu-src">{{ g.src }}</span></span></h3>
+  template: ` @let g = v();
+    <h3>
+      {{ S.nodeGpu }} <span class="pill done">live</span>
+      @if (g.hot) {
+        <span class="pill failed">1 red</span>
+      }
+      <span class="role"
+        >in {{ S.node }} · <span id="gpu-src">{{ g.src }}</span></span
+      >
+    </h3>
     <app-kpi-row [kpis]="g.kpis" />
     <div class="srvgrid">
-      @for (c of g.charts; track c.id) { <app-chart-tile [title]="c.title" [legend]="c.legend" [line]="c.opts" /> }
-      @for (j of g.jobs; track j.key) { <app-chart-tile [title]="j.title" [legend]="j.legend" [line]="j.opts" /> }
+      @for (c of g.charts; track c.id) {
+        <app-chart-tile [title]="c.title" [legend]="c.legend" [line]="c.opts" />
+      }
+      @for (j of g.jobs; track j.key) {
+        <app-chart-tile [title]="j.title" [legend]="j.legend" [line]="j.opts" />
+      }
     </div>`,
 })
 export class NodeGpuCard {

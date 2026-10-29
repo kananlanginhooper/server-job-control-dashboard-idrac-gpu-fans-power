@@ -6,21 +6,33 @@
  * keys and text from these names with t(). The defaults below are what a fresh clone (or the demo) shows.
  */
 export interface Site {
-  main: string; node: string; box: string;     // host names as the hub API spells them (keys) and as shown
-  Box: string;                                 // the intake box's display name
-  nodeGpu: string; boxGpu: string;             // GPU model labels
-  owner: string;                               // who makes the calls the page defers to
-  roles: Record<string, string>;               // host -> one-line description on its server card
-  peers: Record<string, string>;               // LAN address -> label in the connections table
-  mounts: Record<string, string>;              // mount point -> what it holds
-  devMount: Record<string, string>;            // block device -> mount point
-  notes: Record<string, string>;               // free-text notes keyed by name (alert hints, file locations)
+  main: string;
+  node: string;
+  box: string; // host names as the hub API spells them (keys) and as shown
+  Box: string; // the intake box's display name
+  nodeGpu: string;
+  boxGpu: string; // GPU model labels
+  owner: string; // who makes the calls the page defers to
+  roles: Record<string, string>; // host -> one-line description on its server card
+  peers: Record<string, string>; // LAN address -> label in the connections table
+  mounts: Record<string, string>; // mount point -> what it holds
+  devMount: Record<string, string>; // block device -> mount point
+  notes: Record<string, string>; // free-text notes keyed by name (alert hints, file locations)
 }
 
 export const SITE: Site = {
-  main: 'server-a', node: 'server-b', box: 'desk-1', Box: 'Desk 1',
-  nodeGpu: 'GPU (node)', boxGpu: 'GPU (desk)', owner: 'the owner',
-  roles: {}, peers: {}, mounts: {}, devMount: {}, notes: {},
+  main: 'server-a',
+  node: 'server-b',
+  box: 'desk-1',
+  Box: 'Desk 1',
+  nodeGpu: 'GPU (node)',
+  boxGpu: 'GPU (desk)',
+  owner: 'the owner',
+  roles: {},
+  peers: {},
+  mounts: {},
+  devMount: {},
+  notes: {},
 };
 
 export function setSite(s: Partial<Site> | null | undefined) {

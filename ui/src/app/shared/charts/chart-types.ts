@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Dash = boolean | 'dot' | undefined;
-export interface Series { k: string; label: string; short?: string; color: string; dash?: Dash; }
-export interface Point { t: number; [k: string]: any }
+export interface Series {
+  k: string;
+  label: string;
+  short?: string;
+  color: string;
+  dash?: Dash;
+}
+export interface Point {
+  t: number;
+  [k: string]: any;
+}
 
 /** Same option shape as lineChart(el, o) in the original page. */
 export interface LineOpts {
@@ -49,5 +58,8 @@ export interface TrackOpts {
   tracks: Track[];
 }
 
-export const dashArray = (d: Dash) => d ? (d === 'dot' ? '2 3' : '6 4') : null;
-export const keyBg = (s: Series) => s.dash ? `repeating-linear-gradient(90deg,var(${s.color}) 0 4px,transparent 4px 7px)` : `var(${s.color})`;
+export const dashArray = (d: Dash) => (d ? (d === 'dot' ? '2 3' : '6 4') : null);
+export const keyBg = (s: Series) =>
+  s.dash
+    ? `repeating-linear-gradient(90deg,var(${s.color}) 0 4px,transparent 4px 7px)`
+    : `var(${s.color})`;

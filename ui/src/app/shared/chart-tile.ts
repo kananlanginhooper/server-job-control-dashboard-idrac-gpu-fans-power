@@ -10,11 +10,21 @@ import { Legend, LegendItem } from './legend';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LineChart, TrackChart, Legend],
   host: { class: 'srvchart' },
-  template: `
-    <h4 class="srvh">{{ title() }}@if (note()) { <span class="muted">{{ note() }}</span>}</h4>
-    @if (legend(); as l) { <app-legend [items]="l" /> }
-    @if (line(); as o) { <app-line-chart [opts]="o" /> }
-    @if (track(); as o) { <app-track-chart [opts]="o" /> }`,
+  template: ` <h4 class="srvh">
+      {{ title() }}
+      @if (note()) {
+        <span class="muted">{{ note() }}</span>
+      }
+    </h4>
+    @if (legend(); as l) {
+      <app-legend [items]="l" />
+    }
+    @if (line(); as o) {
+      <app-line-chart [opts]="o" />
+    }
+    @if (track(); as o) {
+      <app-track-chart [opts]="o" />
+    }`,
 })
 export class ChartTile {
   readonly title = input.required<string>();

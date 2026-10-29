@@ -9,16 +9,27 @@ import { serversView } from './servers.model';
   selector: '[app-servers]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ServerCard, RangeSeg],
-  template: `
-    <div class="h2row"><h2>Servers now</h2><app-range-seg /></div>
+  template: ` <div class="h2row">
+      <h2>Servers now</h2>
+      <app-range-seg />
+    </div>
     <div class="servers" id="servers">
-      @for (sv of servers(); track sv.name) { <app-server-card [sv]="sv" /> }
+      @for (sv of servers(); track sv.name) {
+        <app-server-card [sv]="sv" />
+      }
     </div>`,
 })
 export class Servers {
   private readonly store = inject(DashboardStore);
   protected readonly servers = computed(() => {
     const s = this.store.state();
-    return s ? serversView(s, { limits: this.store.limits(), range: this.store.range(), th: this.store.th(), ioh: this.store.ioh() }) : [];
+    return s
+      ? serversView(s, {
+          limits: this.store.limits(),
+          range: this.store.range(),
+          th: this.store.th(),
+          ioh: this.store.ioh(),
+        })
+      : [];
   });
 }

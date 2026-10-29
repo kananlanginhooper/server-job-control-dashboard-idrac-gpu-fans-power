@@ -10,5 +10,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 export class Bar {
   readonly frac = input<number | null | undefined>(0);
   readonly cls = input('');
-  protected readonly pct = computed(() => +(Math.max(0, Math.min(1, this.frac() || 0)) * 100).toFixed(1));
+  protected readonly pct = computed(
+    () => +(Math.max(0, Math.min(1, this.frac() || 0)) * 100).toFixed(1),
+  );
 }

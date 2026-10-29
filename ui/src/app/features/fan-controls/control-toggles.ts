@@ -8,15 +8,38 @@ import { TIPS } from './fan-controls.model';
   selector: 'app-control-toggles',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatButton, MatTooltip],
-  template: `
-    <div class="row">
-      <button id="qc-btn" [matButton]="qc() ? 'filled' : 'outlined'" [attr.aria-pressed]="qc()" [disabled]="busy().qc"
-              [matTooltip]="T.QC_TIP" (click)="quickCool.emit()">Quick Cool <b>{{ qc() ? 'On' : 'Off' }}</b></button>
-      <button id="meeting-btn" [matButton]="meeting() ? 'filled' : 'outlined'" [attr.aria-pressed]="meeting()" [disabled]="busy().meeting"
-              [matTooltip]="T.MT_TIP" (click)="meetingMode.emit()">Meeting Mode <b>{{ meeting() ? 'On' : 'Off' }}</b></button>
-      <button id="gpu-btn" [matButton]="gpuOff() ? 'filled' : 'outlined'" [attr.aria-pressed]="gpuOff()" [disabled]="busy().gpu"
-              [matTooltip]="T.GPU_TIP" (click)="gpu.emit()">Disable GPU <b>{{ gpuOff() ? 'On' : 'Off' }}</b></button>
-    </div>`,
+  template: ` <div class="row">
+    <button
+      id="qc-btn"
+      [matButton]="qc() ? 'filled' : 'outlined'"
+      [attr.aria-pressed]="qc()"
+      [disabled]="busy().qc"
+      [matTooltip]="T.QC_TIP"
+      (click)="quickCool.emit()"
+    >
+      Quick Cool <b>{{ qc() ? 'On' : 'Off' }}</b>
+    </button>
+    <button
+      id="meeting-btn"
+      [matButton]="meeting() ? 'filled' : 'outlined'"
+      [attr.aria-pressed]="meeting()"
+      [disabled]="busy().meeting"
+      [matTooltip]="T.MT_TIP"
+      (click)="meetingMode.emit()"
+    >
+      Meeting Mode <b>{{ meeting() ? 'On' : 'Off' }}</b>
+    </button>
+    <button
+      id="gpu-btn"
+      [matButton]="gpuOff() ? 'filled' : 'outlined'"
+      [attr.aria-pressed]="gpuOff()"
+      [disabled]="busy().gpu"
+      [matTooltip]="T.GPU_TIP"
+      (click)="gpu.emit()"
+    >
+      Disable GPU <b>{{ gpuOff() ? 'On' : 'Off' }}</b>
+    </button>
+  </div>`,
 })
 export class ControlToggles {
   protected readonly T = TIPS;
