@@ -1,6 +1,6 @@
 // Shared theme for every home-server dashboard (2026-10-29). Copy this file as-is into each app's
 // src/styles/theme.scss and list it first under "styles" in angular.json. The only per-app setting is --app-accent,
-// set in the app's own styles.scss (see the bottom of this file).
+// set in the app's own styles.scss (see "accent" in :root below).
 //
 // - Angular Material 3, light and dark following the system (color-scheme: light dark; Material's tokens use
 //   light-dark(), so nothing needs a class or a toggle).
@@ -12,22 +12,26 @@
 
 html {
   color-scheme: light dark;
-  @include mat.theme((
-    color: (
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
-    ),
-    typography: (
-      plain-family: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-      brand-family: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-    ),
-    density: 0,
-  ));
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: (
+        plain-family: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        brand-family: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+      ),
+      density: 0,
+    )
+  );
 
   // the app accent drives Material's primary color (buttons, focus, active tabs, ...)
-  @include mat.theme-overrides((
-    primary: var(--app-accent),
-  ));
+  @include mat.theme-overrides(
+    (
+      primary: var(--app-accent),
+    )
+  );
 }
 
 :root {
@@ -71,9 +75,12 @@ html {
   --app-bad: var(--mat-sys-error);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   height: 100%;
   background: var(--app-bg);
@@ -81,4 +88,8 @@ html, body {
   font: var(--app-text-md);
 }
 
-code, pre, kbd { font-family: var(--app-font-mono); }
+code,
+pre,
+kbd {
+  font-family: var(--app-font-mono);
+}
