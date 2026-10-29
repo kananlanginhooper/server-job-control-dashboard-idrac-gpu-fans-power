@@ -39,6 +39,9 @@ docker compose up -d --build
 
 `COMPOSE_PROFILES=hub` runs the broker, backend and UI. Each server runs its own agent from the services repo. Every service restarts on its own.
 
+The containers join the shared external Docker network `homelab`; create it once per host with
+`docker network create --subnet <homelab subnet> homelab` (the subnet the hosts reserve for it).
+
 On the hub server, with the classic dashboard API on the same host, add the host-networking override:
 `docker compose -f compose.yaml -f deploy/compose.hub.yaml up -d`. The UI listens on 8100 and the API on 127.0.0.1:8110,
 so the classic API sees calls from 127.0.0.1 (it refuses Docker bridge addresses). Laptop Docker Desktop shows callers as
