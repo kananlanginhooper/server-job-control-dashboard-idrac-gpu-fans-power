@@ -25,8 +25,8 @@ The per-server agents (iDRAC, GPU, fan-controller state, system metrics) and the
 
 This back end is growing into the one control container for every server (REST API, database, command and work queues).
 Each server's agent pulls its orders from it and reports back:
-[contracts/agent-api.md @ 8a83297](https://github.com/kananlanginhooper/server-job-control-services-idrac-gpu-fans-power/blob/8a83297/contracts/agent-api.md)
-(tag `agent-api-v1`; reference implementation `mocks/agent_api.py` with `tests/test_agent_api.py`). Not built here yet.
+[contracts/agent-api.md @ 0a110c4](https://github.com/kananlanginhooper/server-job-control-services-idrac-gpu-fans-power/blob/0a110c4/contracts/agent-api.md)
+(v1, tag `agent-api-v1` + the core-safety-layer wording; reference implementation `mocks/agent_api.py` with `tests/test_agent_api.py`). Not built here yet.
 
 ## Safety model (enforced by the agents)
 
