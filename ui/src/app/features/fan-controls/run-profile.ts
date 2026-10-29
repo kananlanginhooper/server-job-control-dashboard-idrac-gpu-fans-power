@@ -11,8 +11,8 @@ import { RunProfileButton, TIPS } from './fan-controls.model';
   template: `
     <div class="row"><span class="muted">Run profile</span>
       <mat-button-toggle-group hideSingleSelectionIndicator [value]="current()" [disabled]="busy()" [matTooltip]="T.RP_TIP"
-                               aria-label="Run profile" (change)="pick($event.value)">
-        @for (b of buttons(); track b.label) { <mat-button-toggle class="rp-btn" [value]="b.label">{{ b.label }}</mat-button-toggle> }
+                               aria-label="Run profile">
+        @for (b of buttons(); track b.label) { <mat-button-toggle class="rp-btn" [value]="b.label" (change)="pick(b)">{{ b.label }}</mat-button-toggle> }
       </mat-button-toggle-group>
       @for (w of warn(); track $index) { <span class="warnc">{{ w }}</span> }
       @if (override()) { <span class="muted">{{ override() }}</span> }
@@ -28,9 +28,10 @@ export class RunProfile {
   protected readonly current = computed(() => this.buttons().find(b => b.cur)?.label ?? null);
   private readonly group = viewChild.required(MatButtonToggleGroup);
 
-  protected pick(label: string) {
-    const b = this.buttons().find(x => x.label === label);
-    if (b && !b.cur) this.choose.emit({ p: b.p, w: b.w });
+  /** The toggle's own change fires on every click, so re-clicking the highlighted profile re-applies it
+   *  (fixes "fan-control is running X, not Y"); the group's change would skip that. */
+  protected pick(b: RunProfileButton) {
+    this.choose.emit({ p: b.p, w: b.w });
     this.group().value = this.current();   // the highlight follows what the servers report, not the click
   }
 }
