@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { dur } from '../fmt';
+import { dur } from '../../shared/format';
 
 /**
  * "Live hardware": one box per server from the sjc backend (/api/v1/servers, fed by each server's agent over MQTT).

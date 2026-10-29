@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SITE } from '../site';
+import { SITE } from '../../core/site';
 
 /** A server card's role line from the site config; {nics} and {via} are filled with live values. */
 const role = (host: string, live: Record<string, string>) =>
   (SITE.roles[host] || host).replace(/\{(\w+)\}/g, (m, k) => live[k] ?? m);
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { LineChart } from '../shared/charts/line-chart';
-import { TrackChart } from '../shared/charts/track-chart';
-import { Legend } from '../ui/legend';
-import { RangeSeg } from '../ui/range-seg';
-import { GPU_FAN_MAX_RPM, Limits, driveKind, dur, fb, gpuFanPct, ipmiKind, num, numSort, rate } from '../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { LineChart } from '../../shared/charts/line-chart';
+import { TrackChart } from '../../shared/charts/track-chart';
+import { Legend } from '../../shared/legend';
+import { RangeSeg } from '../../shared/range-seg';
+import { GPU_FAN_MAX_RPM, Limits, driveKind, dur, fb, gpuFanPct, ipmiKind, num, numSort, rate } from '../../shared/format';
 import { ioChart, memChart, tempChart } from './server-charts';
 
 export interface Kpi { l: string; v: string; sub: string; c?: string; tip?: string; }

@@ -1,7 +1,7 @@
-import { ModuleContext, setContext } from './app/module-context';
-import { setSite } from './app/site';
-import { setDemoCapture } from './app/demo-interceptor';
-import { DEMO } from './app/demo';
+import { ModuleContext, setContext } from './app/core/module-context';
+import { setSite } from './app/core/site';
+import { setDemoCapture } from './app/core/demo-interceptor';
+import { DEMO } from './app/core/demo';
 
 /** Runtime config from the back end (GET api/config, relative to <base href>). Its site block names this
  *  installation's machines and must be in place before the app's modules load, so they're imported afterwards. */

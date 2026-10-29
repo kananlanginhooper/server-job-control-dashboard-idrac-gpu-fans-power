@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { note, t } from './site';
+import { note, t } from '../../core/site';
 // "Needs attention" rules, ported 1:1 from render() / renderTasks() / addAlert() in the original page.
 // Each alert is [cls, html]; cls "" = red, "warn" = yellow. The html only carries <b> and values already escaped.
-import { dur, esc, fb, hhmm } from './fmt';
+import { dur, esc, fb, hhmm } from '../../shared/format';
 
 export type Alert = [string, string];
 

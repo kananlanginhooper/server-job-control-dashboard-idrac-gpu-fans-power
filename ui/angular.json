@@ -92,8 +92,8 @@
               "outputHashing": "all",
               "fileReplacements": [
                 {
-                  "replace": "src/app/demo.ts",
-                  "with": "src/app/demo.on.ts"
+                  "replace": "src/app/core/demo.ts",
+                  "with": "src/app/core/demo.on.ts"
                 }
               ],
               "outputPath": {
@@ -119,8 +119,8 @@
               "sourceMap": true,
               "fileReplacements": [
                 {
-                  "replace": "src/app/demo.ts",
-                  "with": "src/app/demo.on.ts"
+                  "replace": "src/app/core/demo.ts",
+                  "with": "src/app/core/demo.on.ts"
                 }
               ],
               "assets": [

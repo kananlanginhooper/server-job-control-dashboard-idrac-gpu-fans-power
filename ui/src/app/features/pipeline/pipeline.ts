@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SITE, t } from '../site';
+import { SITE, t } from '../../core/site';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { Bar } from '../ui/bar';
+import { DashboardStore } from '../../core/dashboard.store';
+import { Bar } from '../../shared/bar';
 
 const PIPE_STG: [RegExp, string][] = [[new RegExp(`^${SITE.node} evidence|^1a`, 'i'), '1a'], [/^1b/i, '1b'], [/^2-|Catalog and dedup/i, '2'], [/^3-/, '3'], [/^4-/, '4'], [/^5a/i, '5a'], [/^5b/i, '5b'],
   [/^Offsite/i, '6'], [/^7-/, '7'], [/Copilot/i, 'AI'], [/Dashboard|RunModes/i, 'dash'], [/Power and Jobs/i, 'power'], [/Server infra|Coordination/i, 'infra']];

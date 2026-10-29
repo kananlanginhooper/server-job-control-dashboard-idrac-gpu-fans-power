@@ -1,23 +1,23 @@
-import { t, SITE } from './site';
+import { t, SITE } from './core/site';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
-import { DashboardStore } from './dashboard.store';
-import { buildAlerts } from './alerts';
-import { dur } from './fmt';
-import { RangeSeg } from './ui/range-seg';
-import { NowTasks } from './cards/now-tasks';
-import { Pipeline } from './cards/pipeline';
+import { DashboardStore } from './core/dashboard.store';
+import { buildAlerts } from './features/alerts/alerts';
+import { dur } from './shared/format';
+import { RangeSeg } from './shared/range-seg';
+import { NowTasks } from './features/now-tasks/now-tasks';
+import { Pipeline } from './features/pipeline/pipeline';
 import { FanControls } from './features/fan-controls/fan-controls';
-import { EmergencyPop } from './cards/emergency-pop';
-import { Servers } from './cards/servers';
-import { Gpus } from './cards/gpus';
-import { Env } from './cards/env';
+import { EmergencyPop } from './features/alerts/emergency-pop';
+import { Servers } from './features/servers/servers';
+import { Gpus } from './features/gpus/gpus';
+import { Env } from './features/environment/environment';
 import { DriveHealth } from './features/storage/drive-health';
 import { DriveRegistry } from './features/storage/drive-registry';
 import { Storage } from './features/storage/storage';
 import { Procs } from './features/storage/procs';
 import { Catalogue } from './features/storage/catalogue';
-import { Carve, Offsite } from './cards/offsite-carve';
-import { LiveHw } from './cards/live-hw';
+import { Carve, Offsite } from './features/offsite-carve/offsite-carve';
+import { LiveHw } from './features/live-hardware/live-hardware';
 
 /**
  * Data Recovery & Intake dashboard, Angular rewrite of main server :8090 (dashboard/index.html).

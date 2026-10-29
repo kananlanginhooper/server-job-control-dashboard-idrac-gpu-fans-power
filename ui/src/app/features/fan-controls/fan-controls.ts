@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
-import { DashboardStore } from '../../dashboard.store';
-import { SITE } from '../../site';
+import { DashboardStore } from '../../core/dashboard.store';
+import { SITE } from '../../core/site';
 import { chartsView, controlsView } from './fan-controls.model';
 import { HostStatusView } from './host-status';
 import { ControlToggles } from './control-toggles';

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
-import { DashboardStore } from '../../dashboard.store';
-import { SITE, t } from '../../site';
-import { dur } from '../../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { SITE, t } from '../../core/site';
+import { dur } from '../../shared/format';
 
 /** Running on the server (watched processes per host) and Connected machines (LAN peers with their services). */
 @Component({

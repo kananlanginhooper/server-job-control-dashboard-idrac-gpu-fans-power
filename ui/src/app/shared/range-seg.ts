@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { RANGES } from '../fmt';
+import { DashboardStore } from '../core/dashboard.store';
+import { RANGES } from './format';
 
 /** "All graphs" time range buttons (one shared range for every chart). */
 @Component({

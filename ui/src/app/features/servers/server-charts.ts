@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SITE, t } from '../site';
+import { SITE, t } from '../../core/site';
 // Per-server history charts from /api/temphist and /api/iohist: every sensor, net per NIC, disk per drive, RAM used + bandwidth;
 // and one chart per GPU job feed (paused/stopped jobs hide, 2026-10-01).
-import { TrackOpts, LineOpts, Series } from '../shared/charts/chart-types';
-import { hhmm, keyStyle, numSort, rate } from '../fmt';
-import { LegendItem } from '../ui/legend';
+import { TrackOpts, LineOpts, Series } from '../../shared/charts/chart-types';
+import { hhmm, keyStyle, numSort, rate } from '../../shared/format';
+import { LegendItem } from '../../shared/legend';
 
 export interface ChartBlock<T> { legend: LegendItem[]; opts: T; }
 

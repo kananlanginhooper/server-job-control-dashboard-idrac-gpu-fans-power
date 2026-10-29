@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t } from '../../site';
+import { t } from '../../core/site';
 export type Dash = boolean | 'dot' | undefined;
 export interface Series { k: string; label: string; short?: string; color: string; dash?: Dash; }
 export type Point = { t: number; [k: string]: any };

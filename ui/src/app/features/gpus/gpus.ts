@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t, SITE } from '../site';
+import { t, SITE } from '../../core/site';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { LineChart } from '../shared/charts/line-chart';
-import { LineOpts, Point } from '../shared/charts/chart-types';
-import { Legend, LegendItem } from '../ui/legend';
-import { GPU_FAN_MAX_RPM, fb, gpuFanPct, keyStyle, num } from '../fmt';
-import { gpuJobCharts } from './server-charts';
-import { Kpi } from './servers';
+import { DashboardStore } from '../../core/dashboard.store';
+import { LineChart } from '../../shared/charts/line-chart';
+import { LineOpts, Point } from '../../shared/charts/chart-types';
+import { Legend, LegendItem } from '../../shared/legend';
+import { GPU_FAN_MAX_RPM, fb, gpuFanPct, keyStyle, num } from '../../shared/format';
+import { gpuJobCharts } from '../servers/server-charts';
+import { Kpi } from '../servers/servers';
 
 /** "GPUs now": GPU cards above the server cards, big GPU in Tug first, then the RTX 2080 Ti in the GPU node. */
 @Component({

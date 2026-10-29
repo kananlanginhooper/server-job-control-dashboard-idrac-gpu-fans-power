@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
-import { DashboardStore } from '../../dashboard.store';
-import { SITE } from '../../site';
-import { fb, num } from '../../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { SITE } from '../../core/site';
+import { fb, num } from '../../shared/format';
 
 const PILL: Record<string, string> = { spare: 'done', new: 'failed', failed: 'failed', under_recovery: 'hashing', evidence: 'hashing', in_use: 'done',
   checked_clean: 'done', recovered: 'done', wiped: 'queued', retired: 'queued' };

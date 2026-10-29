@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t } from '../site';
+import { t } from '../../core/site';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { Bar } from '../ui/bar';
-import { dur, fb, num, rate } from '../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { Bar } from '../../shared/bar';
+import { dur, fb, num, rate } from '../../shared/format';
 
 export function tFmt(v: any, unit: string): string {
   if (v == null) return '—';

@@ -2,7 +2,7 @@
 // Shared pieces of the ECharts wrappers: theme colors from the page's CSS variables, the time axis, line data with
 // gaps, and the tooltip markup (same classes as before, so the page CSS styles it).
 import { DestroyRef, ElementRef, afterNextRender, inject, signal } from '@angular/core';
-import { fmtT } from '../../fmt';
+import { fmtT } from '../format';
 import { Dash, Point, Series } from './chart-types';
 
 /** Host width (for the end-label margin) and a theme tick that changes when light/dark flips. */

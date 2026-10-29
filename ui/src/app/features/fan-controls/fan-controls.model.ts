@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t, SITE } from '../../site';
+import { t, SITE } from '../../core/site';
 import { TrackOpts } from '../../shared/charts/chart-types';
-import { envData, powerLine, withTotals } from '../../derived';
-import { esc, fitRange, gpuFanPct, hhmm, keyStyle, num, plainText } from '../../fmt';
+import { envData, powerLine, withTotals } from '../../core/derived';
+import { esc, fitRange, gpuFanPct, hhmm, keyStyle, num, plainText } from '../../shared/format';
 
 const MODE_TIP: Record<string, string> = {
   normal: t('Automatic: the server is idle. Case fans 4,000 RPM, {node} card fan 75%, GPU at the active profile\'s limit (thermal-profiles.md).'),

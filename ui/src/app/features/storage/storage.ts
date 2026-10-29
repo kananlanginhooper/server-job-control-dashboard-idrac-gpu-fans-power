@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
-import { DashboardStore } from '../../dashboard.store';
-import { SITE, t } from '../../site';
-import { Bar } from '../../ui/bar';
-import { fb, rate } from '../../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { SITE, t } from '../../core/site';
+import { Bar } from '../../shared/bar';
+import { fb, rate } from '../../shared/format';
 
 const ROLE: Record<string, string> = { '/': 'OS + MySQL', '/b': 'earlier files', '/c': t('{node} prior output (Step A)'), '/d': 'intake batch 2 + Step A samba',
   '/e': 'intake batch 1 (slot-5 SSD)', '/n2': 'Acer NVMe', '/n4': '990 PRO NVMe — no sustained writes' };

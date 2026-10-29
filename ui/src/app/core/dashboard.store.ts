@@ -3,7 +3,7 @@ import { t } from './site';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { Limits, RLABEL } from './fmt';
+import { Limits, RLABEL } from '../shared/format';
 import { lsKey } from './module-context';
 
 /**

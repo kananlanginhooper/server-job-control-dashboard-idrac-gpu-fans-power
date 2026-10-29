@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
-import { DashboardStore } from '../../dashboard.store';
-import { fb, num } from '../../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { fb, num } from '../../shared/format';
 
 /** Catalogue database (MySQL recovery): every table, largest first, plus the catalog.py scan log. */
 @Component({

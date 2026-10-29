@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { emergGpu, emergSens } from '../alerts';
-import { dur, hhmm } from '../fmt';
-import { lsKey } from '../module-context';
+import { DashboardStore } from '../../core/dashboard.store';
+import { emergGpu, emergSens } from './alerts';
+import { dur, hhmm } from '../../shared/format';
+import { lsKey } from '../../core/module-context';
 
 const eKey = (e: any) => e.host + '@' + Math.round(e.start);
 /** dismissed / notified emergency keys, per browser (last 50) */

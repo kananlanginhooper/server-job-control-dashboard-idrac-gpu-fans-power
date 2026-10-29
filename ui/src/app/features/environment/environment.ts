@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t } from '../site';
+import { t } from '../../core/site';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { LineChart } from '../shared/charts/line-chart';
-import { LineOpts, Point } from '../shared/charts/chart-types';
-import { Legend, LegendItem } from '../ui/legend';
-import { envData } from '../derived';
-import { fitRange, gpuFanPct, keyStyle, num } from '../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { LineChart } from '../../shared/charts/line-chart';
+import { LineOpts, Point } from '../../shared/charts/chart-types';
+import { Legend, LegendItem } from '../../shared/legend';
+import { envData } from '../../core/derived';
+import { fitRange, gpuFanPct, keyStyle, num } from '../../shared/format';
 
 /** cause = which sensor or reason; effect = what the fans or GPU did */
 function fanEventRow(host: string, t: number, m: string) {

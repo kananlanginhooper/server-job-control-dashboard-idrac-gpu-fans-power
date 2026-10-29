@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
-import { DashboardStore } from '../../dashboard.store';
-import { SITE } from '../../site';
-import { num, numSort } from '../../fmt';
+import { DashboardStore } from '../../core/dashboard.store';
+import { SITE } from '../../core/site';
+import { num, numSort } from '../../shared/format';
 
 const RANK: Record<string, number> = { bad: 0, watch: 1, unknown: 2, ok: 3 };
 const PILL: Record<string, string> = { bad: 'failed', watch: 'queued', unknown: 'queued', ok: 'done' };

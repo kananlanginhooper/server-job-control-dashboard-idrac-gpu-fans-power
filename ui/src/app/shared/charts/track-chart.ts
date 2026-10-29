@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
-import { niceMax } from '../../fmt';
+import { niceMax } from '../format';
 import { Point, TrackOpts, keyBg } from './chart-types';
 import { chartHost, pageFont, lineData, lineSeries, nearest, esc, timeAxis, tipBox, tipTitle } from './chart-kit';
 
