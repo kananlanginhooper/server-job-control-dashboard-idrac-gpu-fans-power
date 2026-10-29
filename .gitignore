@@ -9,4 +9,5 @@ dist/
 # live controller sources and per-server settings: private (home-network details), never public
 controllers/
 deploy/local/
+hub/local/
 *.egg-info/
