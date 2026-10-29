@@ -17,5 +17,5 @@ services:
     network_mode: host
     ports: !reset []
     environment:
-      UI_LISTEN: ${SJC_UI_PORT:-8100}
+      UI_LISTEN: ${BIND_ADDR:-127.0.0.1}:${SJC_UI_PORT:-8100}   # the LAN IPv4 address only
       BACKEND_URL: http://127.0.0.1:8110

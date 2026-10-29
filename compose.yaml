@@ -9,7 +9,7 @@ services:
     profiles: [hub]
     image: eclipse-mosquitto:2.0
     restart: unless-stopped
-    ports: ["${SJC_MQTT_PUBLISH:-1883}:1883"]
+    ports: ["${BIND_ADDR:-127.0.0.1}:${SJC_MQTT_PUBLISH:-1883}:1883"]   # IPv4 LAN address only, never bare ([::])
     volumes:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto-data:/mosquitto/data
@@ -40,7 +40,7 @@ services:
     build: { context: ui }
     restart: unless-stopped
     depends_on: [backend]
-    ports: ["${SJC_UI_PORT:-8100}:80"]
+    ports: ["${BIND_ADDR:-127.0.0.1}:${SJC_UI_PORT:-8100}:80"]
     environment:
       FRAME_ANCESTORS: ${FRAME_ANCESTORS:-}
       UI_BASE_PATH: ${UI_BASE_PATH:-/}   # must start and end with /
