@@ -1,0 +1,2 @@
+# iDRAC is Dell's management controller (a product name, also in the repo name), not a host
+net:server-name * (?i)idrac

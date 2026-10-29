@@ -1,0 +1,73 @@
+# Server job control: one compose project per server. Pick what runs with COMPOSE_PROFILES in .env:
+#   hub    = MQTT broker + backend API + UI (one server, e.g. the main server)
+#   agent  = this server's agent (every server)
+# All services restart on their own (restart: unless-stopped) and come back when Docker starts at boot.
+name: sjc
+
+services:
+  mosquitto:
+    profiles: [hub]
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    ports: ["${SJC_MQTT_PUBLISH:-1883}:1883"]
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+
+  backend:
+    profiles: [hub]
+    build: { context: ., dockerfile: backend/Dockerfile }
+    restart: unless-stopped
+    depends_on: [mosquitto]
+    environment:
+      SJC_MQTT_HOST: mosquitto
+      SJC_LEGACY_API: ${SJC_LEGACY_API:-}
+      SJC_CONTROL_NETS: ${SJC_CONTROL_NETS:-127.,10.,172.,192.168.}
+      SJC_SITE_FILE: /site/site.json
+      FRAME_ANCESTORS: ${FRAME_ANCESTORS:-}
+      UI_BASE_PATH: ${UI_BASE_PATH:-/}
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      LOGIN: ${LOGIN:-off}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+    volumes:
+      - ./deploy/local:/site:ro   # private site.json (machine names, roles); missing = generic names
+
+  ui:
+    profiles: [hub]
+    build: { context: ui }
+    restart: unless-stopped
+    depends_on: [backend]
+    ports: ["${SJC_UI_PORT:-8099}:80"]
+    environment:
+      FRAME_ANCESTORS: ${FRAME_ANCESTORS:-}
+
+  agent:
+    profiles: [agent]
+    build: { context: ., dockerfile: agent/Dockerfile }
+    restart: unless-stopped
+    network_mode: host          # host network: real NIC counters, and reaches the broker on localhost or the LAN
+    pid: host
+    devices: ["/dev/ipmi0:/dev/ipmi0"]   # in-band IPMI to this server's iDRAC
+    volumes:                    # read-only views of the host; the agent never writes controller files
+      - /proc:/host/proc:ro
+      - /run:/host/run:ro
+      - /dev/shm:/host/shm:ro
+      - ${SJC_HOST_ETC:-/usr/local/etc}:/host/etc:ro
+      - ${SJC_SCALER_DIR:-/nonexistent}:/host/scaler:ro
+    environment:
+      SJC_HOST: ${SJC_HOST:?set SJC_HOST in .env}
+      SJC_MQTT_HOST: ${SJC_MQTT_HOST:-127.0.0.1}
+      SJC_MQTT_PORT: ${SJC_MQTT_PUBLISH:-1883}
+      SJC_HOST_PROC: /host/proc
+      SJC_NVIDIA_SMI: ${SJC_NVIDIA_SMI:-}
+      SJC_FAN_CONTROL_STATE: ${SJC_FAN_CONTROL_STATE:-/host/run/fan-control.json}
+      SJC_RUN_PROFILE_FILE: ${SJC_RUN_PROFILE_FILE:-/host/run/run-profile.json}
+      SJC_LIMITS_FILE: ${SJC_LIMITS_FILE:-/host/etc/component-limits.json}
+      SJC_THROTTLE_FILE: ${SJC_THROTTLE_FILE:-/host/shm/power-throttle.json}
+      SJC_SCALER_STATE: ${SJC_SCALER_STATE:-}
+      SJC_POWER_EVERY_S: ${SJC_POWER_EVERY_S:-1}
+      SJC_MANUAL_LEASE_S: ${SJC_MANUAL_LEASE_S:-600}
+
+volumes:
+  mosquitto-data:

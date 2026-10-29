@@ -1,0 +1,12 @@
+.env
+**/__pycache__/
+**/.venv/
+.venv/
+*.log
+node_modules/
+dist/
+.angular/
+# live controller sources and per-server settings: private (home-network details), never public
+controllers/
+deploy/local/
+*.egg-info/
