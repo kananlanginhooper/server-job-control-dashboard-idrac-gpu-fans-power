@@ -14,13 +14,16 @@ power, fans, temperatures, GPUs, run modes and long-running jobs, and drives fan
 
 | Folder | What |
 |---|---|
-| `agent/` | One per server. Publishes iDRAC sensors, DCMI power, GPUs, fan-controller state, run mode and system metrics to MQTT; runs fan and GPU commands it receives |
-| `hw/` | Shared Python helpers (`sjc_hw`): ipmitool and nvidia-smi parsing, controller state readers, Emergency limits, psutil metrics |
 | `backend/` | FastAPI: `/api/v1/servers` from MQTT, control POSTs, `/api/config`, optional forward of other `/api/*` calls to an existing dashboard API |
 | `ui/` | Angular 20 standalone dashboard (zoneless, signals). Machine names and descriptions come from `/api/config` at runtime |
 | `mosquitto/` | Broker config (LAN only) |
 
-## Safety model
+The per-server agents (iDRAC, GPU, fan-controller state, system metrics) and their helpers live in
+[server-job-control-services-idrac-gpu-fans-power](https://github.com/kananlanginhooper/server-job-control-services-idrac-gpu-fans-power)
+(`services/sjc-agent`, `lib/sjc_hw`). Topics and payloads:
+[contracts/mqtt-topics.md @ ae58de0](https://github.com/kananlanginhooper/server-job-control-services-idrac-gpu-fans-power/blob/ae58de0/contracts/mqtt-topics.md) (version 1).
+
+## Safety model (enforced by the agents)
 
 - A separate fan controller (one per server) owns the fans, the Emergency path and GPU power limits. While its state file is fresh, the agent **refuses** manual fan and GPU commands.
 - When the agent does hold manual fan control, it hands the fans back to the BMC's automatic curve when the hold lease runs out, when the controller comes back, or as soon as any sensor reaches its Emergency temperature (from the shared component-limits file).
@@ -34,13 +37,12 @@ mkdir -p deploy/local       # optional: deploy/local/site.json names your machin
 docker compose up -d --build
 ```
 
-`COMPOSE_PROFILES=hub,agent` on the main server (broker + backend + UI + its agent), `agent` on the others.
-Servers with an NVIDIA GPU add `compose.gpu.yaml` (needs nvidia-container-toolkit). Every service restarts on its own.
+`COMPOSE_PROFILES=hub` runs the broker, backend and UI. Each server runs its own agent from the services repo. Every service restarts on its own.
 
 UI development: `cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json` (forwards `/api` to a backend on `localhost:8000`).
 
 ## Config
 
-All settings are environment variables; see `.env.example` and `hw/sjc_hw/config.py`. The UI follows the group
+All settings are environment variables; see `.env.example` and `backend/app/settings.py`. The UI follows the group
 standard: `GET /api/config` returns `{ apiBase, basePath, publicUrl, frameParents, login: { enabled, issuer, clientId }, site }`,
 and every response sends `Content-Security-Policy: frame-ancestors 'self' $FRAME_ANCESTORS`.

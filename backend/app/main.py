@@ -21,7 +21,7 @@ import httpx
 import paho.mqtt.client as mqtt
 from fastapi import FastAPI, HTTPException, Request, Response
 
-from sjc_hw.config import settings as S
+from .settings import settings as S
 
 PARTS = ("status", "idrac", "power", "gpu", "safety", "runlevel", "system")
 servers: dict[str, dict] = {}            # host -> part -> payload (+ "_at": part -> receive time)
