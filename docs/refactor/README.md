@@ -26,3 +26,5 @@ for dashed series, "collecting…" when empty. (It is a stacked line chart, not 
 - The tooltip stays inside the chart (ECharts `confine`) and flips left/up near the edge; before it could hang over the next card.
 - In a TrackChart, the hover dot shows on the hovered track's lines only (the crosshair still runs through every track).
 - Text uses the page font through ECharts; sizes and weights are the same as before.
+- TrackChart tooltips with buckets of an hour or more give the real size ("N-hour avg", as the line chart always did); before, the TrackChart always said "1-hour avg".
+- If `/api/config` can't be reached, the page retries for about 7 seconds, then starts with the generic names. Because those names are also the data keys, the intake box's GPU and server cards then show offline until a reload.
