@@ -94,5 +94,14 @@ def test_controls_are_lan_only(client, monkeypatch):
     assert r.status_code == 403
 
 
+def test_data_is_home_lan_only_and_router_excluded(client, monkeypatch):
+    monkeypatch.setenv("SJC_CONTROL_EXCLUDE", "testclient")  # the router's address is excluded the same way
+    get_settings.cache_clear()
+    assert client.get("/api/v1/servers").status_code == 403
+    assert client.get("/api/config").status_code == 403
+    assert client.post("/api/v1/servers/server-a/fans", json={"auto": True}).status_code == 403
+    assert client.get("/healthz").status_code == 200  # health stays open for Docker and monitors
+
+
 def test_legacy_forward_off_when_unset(client):
     assert client.get("/api/state").status_code == 404

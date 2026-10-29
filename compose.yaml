@@ -22,7 +22,8 @@ services:
     environment:
       SJC_MQTT_HOST: mosquitto
       SJC_LEGACY_API: ${SJC_LEGACY_API:-}
-      SJC_CONTROL_NETS: ${SJC_CONTROL_NETS:-127.,10.,172.,192.168.}
+      SJC_CONTROL_NETS: ${SJC_CONTROL_NETS:-127.,10.}          # data + controls: home LAN only
+      SJC_CONTROL_EXCLUDE: ${SJC_CONTROL_EXCLUDE:-}    # ...minus these addresses (set the router in .env)
       SJC_SITE_FILE: /site/site.json
       FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-*}
       FRAME_ANCESTORS: ${FRAME_ANCESTORS:-}
@@ -43,6 +44,8 @@ services:
     environment:
       FRAME_ANCESTORS: ${FRAME_ANCESTORS:-}
       UI_BASE_PATH: ${UI_BASE_PATH:-/}   # must start and end with /
+      UI_LISTEN: "80"
+      BACKEND_URL: http://backend:8000
 
 
 volumes:

@@ -27,7 +27,7 @@ The per-server agents (iDRAC, GPU, fan-controller state, system metrics) and the
 
 - A separate fan controller (one per server) owns the fans, the Emergency path and GPU power limits. While its state file is fresh, the agent **refuses** manual fan and GPU commands.
 - When the agent does hold manual fan control, it hands the fans back to the BMC's automatic curve when the hold lease runs out, when the controller comes back, or as soon as any sensor reaches its Emergency temperature (from the shared component-limits file).
-- Control POSTs are accepted only from LAN address prefixes (`SJC_CONTROL_NETS`).
+- Data and controls are served only to home-LAN address prefixes (`SJC_CONTROL_NETS`, default `127.,10.`) minus the addresses in `SJC_CONTROL_EXCLUDE` (put the router there); `/healthz` stays open.
 
 ## Run it
 
@@ -38,6 +38,11 @@ docker compose up -d --build
 ```
 
 `COMPOSE_PROFILES=hub` runs the broker, backend and UI. Each server runs its own agent from the services repo. Every service restarts on its own.
+
+On the hub server, with the classic dashboard API on the same host, add the host-networking override:
+`docker compose -f compose.yaml -f deploy/compose.hub.yaml up -d`. The UI listens on 8100 and the API on 127.0.0.1:8110,
+so the classic API sees calls from 127.0.0.1 (it refuses Docker bridge addresses). Laptop Docker Desktop shows callers as
+its gateway (192.168.x), so add that prefix to `SJC_CONTROL_NETS` there for local runs.
 
 UI development: `cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json` (forwards `/api` to a backend on `localhost:8000`).
 

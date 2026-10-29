@@ -22,8 +22,9 @@ class Settings(BaseSettings):
     mqtt_prefix: str = Field("sjc", validation_alias="SJC_MQTT_PREFIX")
     # optional: forward the UI's other /api/* calls to an existing dashboard API; empty = none
     legacy_api: str = Field("", validation_alias="SJC_LEGACY_API")
-    # control POSTs only from these address prefixes (home LAN)
-    control_nets: str = Field("127.,10.,172.,192.168.", validation_alias="SJC_CONTROL_NETS")
+    # data and controls only from these address prefixes (home LAN), minus the excluded addresses (the router)
+    control_nets: str = Field("127.,10.", validation_alias="SJC_CONTROL_NETS")
+    control_exclude: str = Field("", validation_alias="SJC_CONTROL_EXCLUDE")
     # private site file: this installation's machine names and descriptions
     site_file: str = Field("", validation_alias="SJC_SITE_FILE")
     # group standard (DEV-STANDARD section 5)
@@ -37,6 +38,10 @@ class Settings(BaseSettings):
     @property
     def control_prefixes(self) -> tuple[str, ...]:
         return tuple(p for p in self.control_nets.split(",") if p)
+
+    @property
+    def control_excluded(self) -> frozenset[str]:
+        return frozenset(p for p in self.control_exclude.split(",") if p)
 
     @property
     def legacy_base(self) -> str:

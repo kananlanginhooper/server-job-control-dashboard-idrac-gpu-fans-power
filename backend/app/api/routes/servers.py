@@ -25,13 +25,13 @@ def healthz(h: MqttHub = Depends(hub)) -> Health:
     return Health(ok=True, mqtt=MqttState(connected=h.connected, since=h.since), servers=sorted(h.servers))
 
 
-@router.get("/api/v1/servers", response_model=ServersResponse)
+@router.get("/api/v1/servers", response_model=ServersResponse, dependencies=[Depends(lan_only)])
 def all_servers(h: MqttHub = Depends(hub)):
     """Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system)."""
     return h.all()
 
 
-@router.get("/api/v1/servers/{host}", response_model=ServerView)
+@router.get("/api/v1/servers/{host}", response_model=ServerView, dependencies=[Depends(lan_only)])
 def one_server(host: str, h: MqttHub = Depends(hub)):
     v = h.view(host)
     if v is None:
@@ -39,7 +39,7 @@ def one_server(host: str, h: MqttHub = Depends(hub)):
     return v
 
 
-@router.get("/api/v1/servers/{host}/{part}", response_model=Any | None)
+@router.get("/api/v1/servers/{host}/{part}", response_model=Any | None, dependencies=[Depends(lan_only)])
 def one_part(host: str, part: str, h: MqttHub = Depends(hub)):
     if part not in PARTS:
         raise HTTPException(404, f"unknown part {part}")

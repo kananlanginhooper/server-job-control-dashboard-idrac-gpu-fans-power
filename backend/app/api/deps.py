@@ -15,8 +15,8 @@ def client_ip(req: Request) -> str:
 
 
 def lan_only(req: Request, s: Settings = Depends(get_settings)) -> str:
-    """Controls are accepted only from the home LAN prefixes (SJC_CONTROL_NETS); returns the caller's address."""
+    """Data and controls only for the home LAN (SJC_CONTROL_NETS minus SJC_CONTROL_EXCLUDE); returns the caller's address."""
     ip = client_ip(req)
-    if not ip.startswith(s.control_prefixes):
-        raise HTTPException(403, "controls can only be used from the home LAN")
+    if not ip.startswith(s.control_prefixes) or ip in s.control_excluded:
+        raise HTTPException(403, "home LAN only")
     return ip

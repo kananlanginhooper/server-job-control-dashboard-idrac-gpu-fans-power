@@ -5,11 +5,12 @@ from fastapi import APIRouter, Depends
 from ...core.config import Settings, get_settings
 from ...schemas.config import AppConfig
 from ...services.site import app_config
+from ..deps import lan_only
 
 router = APIRouter(tags=["config"])
 
 
-@router.get("/api/config", response_model=AppConfig)
+@router.get("/api/config", response_model=AppConfig, dependencies=[Depends(lan_only)])  # site names are private
 def config(s: Settings = Depends(get_settings)) -> AppConfig:
     """Runtime config the UI loads before it starts."""
     return app_config(s)

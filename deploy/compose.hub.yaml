@@ -1,0 +1,21 @@
+# Hub server override: docker compose -f compose.yaml -f deploy/compose.hub.yaml up -d
+# Host networking for the backend and UI, so the classic dashboard API (SJC_LEGACY_API on the same host) sees calls from
+# 127.0.0.1; it refuses Docker's 172.x bridge addresses. Ports on the host: UI 8100, API 127.0.0.1:8110 (loopback only),
+# MQTT 1883 (published from the broker's bridge network; the other servers' agents connect to it).
+services:
+  backend:
+    network_mode: host
+    command: ["uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8110", "--proxy-headers"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8110/healthz', timeout=4)"]
+    environment:
+      SJC_MQTT_HOST: 127.0.0.1
+      SJC_LEGACY_API: ${SJC_LEGACY_API:-http://127.0.0.1:8090}
+      FORWARDED_ALLOW_IPS: 127.0.0.1   # only the UI's nginx (same host) may set X-Forwarded-For
+
+  ui:
+    network_mode: host
+    ports: !reset []
+    environment:
+      UI_LISTEN: ${SJC_UI_PORT:-8100}
+      BACKEND_URL: http://127.0.0.1:8110
