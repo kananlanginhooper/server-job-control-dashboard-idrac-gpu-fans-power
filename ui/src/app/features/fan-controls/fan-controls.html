@@ -12,7 +12,7 @@
                          (quickCool)="store.quickCool()" (meetingMode)="store.meeting()" (gpu)="store.gpu()" />
     @if (v.hold) { <div class="row"><span class="pill queued">plan</span><span class="muted">{{ v.hold }}</span></div> }
     <app-run-profile [buttons]="v.rpButtons" [warn]="v.rpWarn" [override]="v.override" [busy]="store.busy().rp"
-                     (select)="store.runProfile($event.p, $event.w)" />
+                     (choose)="store.runProfile($event.p, $event.w)" />
     @if (v.qc) { <div class="row" [innerHTML]="v.qcText"></div> }
     @if (v.mt.want || v.mt.turning) { <div class="row"><span>Meeting Mode:</span><span [innerHTML]="v.mt.text"></span></div> }
   }

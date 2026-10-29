@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SITE, t } from '../../core/site';
+import { SITE } from '../../core/site';
 // Per-server history charts from /api/temphist and /api/iohist: every sensor, net per NIC, disk per drive, RAM used + bandwidth;
 // and one chart per GPU job feed (paused/stopped jobs hide, 2026-10-01).
 import { TrackOpts, LineOpts, Series } from '../../shared/charts/chart-types';

@@ -1,4 +1,3 @@
-import { t } from '../core/site';
 // Formatting helpers, ported 1:1 from the live dashboard (dashboard/index.html).
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

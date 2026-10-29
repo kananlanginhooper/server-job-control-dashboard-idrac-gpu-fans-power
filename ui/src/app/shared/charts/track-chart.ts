@@ -19,16 +19,16 @@ const TITLE = 16, GAP = 14, B = 24;
   imports: [NgxEchartsDirective],
   host: { class: 'lc chartwrap', style: 'display:block' },
   template: `<div echarts [options]="options()" [initOpts]="{ renderer: 'svg' }" [autoResize]="true"
-                  role="img" [attr.aria-label]="o().label || ''" [style.height.px]="height()"></div>`,
+                  role="img" [attr.aria-label]="opts().label || ''" [style.height.px]="height()"></div>`,
 })
 export class TrackChart {
-  readonly o = input.required<TrackOpts>({ alias: 'opts' });
+  readonly opts = input.required<TrackOpts>();
   private readonly h = chartHost();
 
-  protected readonly height = computed(() => this.o().tracks.reduce((y, ln) => y + TITLE + ln.height + GAP, 0) - GAP + B);
+  protected readonly height = computed(() => this.opts().tracks.reduce((y, ln) => y + TITLE + ln.height + GAP, 0) - GAP + B);
 
   protected readonly options = computed(() => {
-    const o = this.o(), W = this.h.width(); this.h.theme();
+    const o = this.opts(), W = this.h.width(); this.h.theme();
     const css = this.h.css, muted = css('--muted'), ink = css('--ink'), card = css('--card');
     const L = o.left ?? 58, R = o.right ?? 104, bucket = o.bucket_s || 60;
     const pts: Point[] = o.points || [], x1 = Date.now() / 1000, x0 = x1 - o.range_s;

@@ -34,7 +34,7 @@ export class Pipeline {
   protected readonly store = inject(DashboardStore);
   protected readonly jobs = computed(() => {
     const s = this.store.state() || {};
-    const stage = (j: any) => { const w = ((j.what || '').match(/\[was: ([^;\]]*)/) || [])[1] || j.owner || ''; return (PIPE_STG.find(([r]) => r.test(w)) || [, '–'])[1] as string; };
+    const stage = (j: any) => { const w = ((j.what || '').match(/\[was: ([^;\]]*)/) || [])[1] || j.owner || ''; return (PIPE_STG.find(([r]) => r.test(w))?.[1] ?? '–'); };
     const jl = (s.job_locks || []).map((j: any) => ({ stg: stage(j), ...j }));
     jl.sort((a: any, b: any) => PIPE_ORD.indexOf(a.stg) - PIPE_ORD.indexOf(b.stg) || a.job.localeCompare(b.job));
     const cnt: Record<string, number> = {};

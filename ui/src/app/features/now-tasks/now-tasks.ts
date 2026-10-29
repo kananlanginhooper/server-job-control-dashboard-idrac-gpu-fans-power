@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t } from '../../core/site';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DashboardStore } from '../../core/dashboard.store';
 import { Bar } from '../../shared/bar';

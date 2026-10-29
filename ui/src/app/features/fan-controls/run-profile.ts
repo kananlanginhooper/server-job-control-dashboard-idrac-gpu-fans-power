@@ -24,13 +24,13 @@ export class RunProfile {
   readonly warn = input<string[]>([]);
   readonly override = input('');
   readonly busy = input(false);
-  readonly select = output<{ p: string; w?: number }>();
+  readonly choose = output<{ p: string; w?: number }>();
   protected readonly current = computed(() => this.buttons().find(b => b.cur)?.label ?? null);
   private readonly group = viewChild.required(MatButtonToggleGroup);
 
   protected pick(label: string) {
     const b = this.buttons().find(x => x.label === label);
-    if (b && !b.cur) this.select.emit({ p: b.p, w: b.w });
+    if (b && !b.cur) this.choose.emit({ p: b.p, w: b.w });
     this.group().value = this.current();   // the highlight follows what the servers report, not the click
   }
 }

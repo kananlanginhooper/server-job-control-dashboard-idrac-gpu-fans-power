@@ -19,14 +19,14 @@ import { chartHost, pageFont, lineData, lineSeries, nearest, row, esc, timeAxis,
   imports: [NgxEchartsDirective],
   host: { class: 'lc chartwrap', style: 'display:block' },
   template: `<div echarts [options]="options()" [initOpts]="{ renderer: 'svg' }" [autoResize]="true"
-                  role="img" [attr.aria-label]="o().label || ''" [style.height.px]="o().height || 240"></div>`,
+                  role="img" [attr.aria-label]="opts().label || ''" [style.height.px]="opts().height || 240"></div>`,
 })
 export class LineChart {
-  readonly o = input.required<LineOpts>({ alias: 'opts' });
+  readonly opts = input.required<LineOpts>();
   private readonly h = chartHost();
 
   protected readonly options = computed(() => {
-    const o = this.o(), W = this.h.width(); this.h.theme();
+    const o = this.opts(), W = this.h.width(); this.h.theme();
     const css = this.h.css, muted = css('--muted'), card = css('--card');
     const L = o.left ?? 58;
     const maxLab = Math.max(0, ...(o.series || []).map(x => String(x.short || x.label || '').length)) + 11;

@@ -2,7 +2,9 @@
 
 Screenshots of every chart in the demo (generic mock data), captured with `node ui/demo/shoot.mjs <demo url> <dir>`:
 `before/` is the hand-drawn SVG version (main at c01e065), `after/` the ECharts version on `refactor/template`.
-File names match: the same chart has the same number in both folders. `00-hover-first-chart.png` shows the tooltip.
+File names match by chart title. `after/` has two more charts than `before/`: the intake box's GPU power and memory. In the
+before build the demo showed that GPU as offline, because the code read the box's data under its live host name instead of the
+site config's name (fixed in the GPU/servers split), so numbers from 03 on are shifted by two. `00-hover-first-chart.png` shows the tooltip.
 
 ## Features kept (same `opts` inputs, same selectors; no card changed)
 

@@ -166,9 +166,7 @@ export interface components {
              * Site
              * @description machine names, roles and notes (private site file); empty = generic names
              */
-            site?: {
-                [key: string]: unknown;
-            };
+            site?: Record<string, unknown>;
         };
         /**
          * CommandResult
@@ -185,9 +183,7 @@ export interface components {
             at?: number | null;
             /** Error */
             error?: string | null;
-        } & {
-            [key: string]: unknown;
-        };
+        } & Record<string, unknown>;
         /**
          * FanCommand
          * @description Either a manual fan speed for every fan, or back to the iDRAC's automatic curve.
@@ -265,36 +261,22 @@ export interface components {
              */
             status?: string | null;
             /** Idrac */
-            idrac?: {
-                [key: string]: unknown;
-            } | null;
+            idrac?: Record<string, unknown> | null;
             /** Power */
-            power?: {
-                [key: string]: unknown;
-            } | null;
+            power?: Record<string, unknown> | null;
             /** Gpu */
-            gpu?: {
-                [key: string]: unknown;
-            } | null;
+            gpu?: Record<string, unknown> | null;
             /** Safety */
-            safety?: {
-                [key: string]: unknown;
-            } | null;
+            safety?: Record<string, unknown> | null;
             /** Runlevel */
-            runlevel?: {
-                [key: string]: unknown;
-            } | null;
+            runlevel?: Record<string, unknown> | null;
             /** System */
-            system?: {
-                [key: string]: unknown;
-            } | null;
+            system?: Record<string, unknown> | null;
             /**
              * Age S
              * @description seconds since each part last arrived
              */
-            age_s?: {
-                [key: string]: number;
-            };
+            age_s?: Record<string, number>;
         };
         /** ServersResponse */
         ServersResponse: {
@@ -303,9 +285,7 @@ export interface components {
             /** Mqtt */
             mqtt: boolean;
             /** Servers */
-            servers: {
-                [key: string]: components["schemas"]["ServerView"];
-            };
+            servers: Record<string, components["schemas"]["ServerView"]>;
         };
         /** ValidationError */
         ValidationError: {
@@ -340,9 +320,7 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["AppConfig"];
                 };
@@ -360,9 +338,7 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["Health"];
                 };
@@ -380,9 +356,7 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["ServersResponse"];
                 };
@@ -402,18 +376,14 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["ServerView"];
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
@@ -434,18 +404,14 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": unknown | null;
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
@@ -469,18 +435,14 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["CommandResult"];
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
@@ -504,18 +466,14 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["CommandResult"];
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
+                headers: Record<string, unknown>;
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };

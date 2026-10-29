@@ -1,4 +1,4 @@
-import { t, SITE } from './core/site';
+import { SITE } from './core/site';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { DashboardStore } from './core/dashboard.store';
 import { buildAlerts } from './features/alerts/alerts';
@@ -16,7 +16,8 @@ import { DriveRegistry } from './features/storage/drive-registry';
 import { Storage } from './features/storage/storage';
 import { Procs } from './features/storage/procs';
 import { Catalogue } from './features/storage/catalogue';
-import { Carve, Offsite } from './features/offsite-carve/offsite-carve';
+import { Offsite } from './features/offsite-carve/offsite';
+import { Carve } from './features/offsite-carve/carve';
 import { LiveHw } from './features/live-hardware/live-hardware';
 
 /**

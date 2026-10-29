@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t } from '../../core/site';
 export type Dash = boolean | 'dot' | undefined;
 export interface Series { k: string; label: string; short?: string; color: string; dash?: Dash; }
-export type Point = { t: number; [k: string]: any };
+export interface Point { t: number; [k: string]: any }
 
 /** Same option shape as lineChart(el, o) in the original page. */
 export interface LineOpts {
