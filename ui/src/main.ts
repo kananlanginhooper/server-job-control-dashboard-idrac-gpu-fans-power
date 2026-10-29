@@ -2,13 +2,14 @@ import { ModuleContext, setContext } from './app/core/module-context';
 import { setSite } from './app/core/site';
 import { setDemoCapture } from './app/core/demo-interceptor';
 import { DEMO } from './app/core/demo';
+import { AppConfig } from './app/core/api';
 
 /** Runtime config from the back end (GET api/config, relative to <base href>). Its site block names this
  *  installation's machines and must be in place before the app's modules load, so they're imported afterwards. */
 async function loadConfig(apiBase = 'api/'): Promise<void> {
   try {
     const r = await fetch(apiBase + (DEMO ? 'config.json' : 'config'), { cache: 'no-store' });
-    if (r.ok) { const c = await r.json(); setSite(c.site); setDemoCapture(c.demo?.capturedAt); }
+    if (r.ok) { const c: AppConfig & { demo?: { capturedAt?: number } } = await r.json(); setSite(c.site); setDemoCapture(c.demo?.capturedAt); }
   } catch { /* no back end (demo, or it's down): generic names */ }
 }
 

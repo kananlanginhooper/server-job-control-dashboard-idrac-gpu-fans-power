@@ -1,0 +1,678 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Server job control",
+    "version": "1"
+  },
+  "paths": {
+    "/api/config": {
+      "get": {
+        "tags": [
+          "config"
+        ],
+        "summary": "Config",
+        "description": "Runtime config the UI loads before it starts.",
+        "operationId": "config_api_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "summary": "All Servers",
+        "description": "Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system).",
+        "operationId": "all_servers_api_v1_servers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{host}": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "summary": "One Server",
+        "operationId": "one_server_api_v1_servers__host__get",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{host}/{part}": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "summary": "One Part",
+        "operationId": "one_part_api_v1_servers__host___part__get",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Host"
+            }
+          },
+          {
+            "name": "part",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Part"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {},
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response One Part Api V1 Servers  Host   Part  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{host}/fans": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "summary": "Fans",
+        "description": "Manual fan % or back to the iDRAC's automatic curve. The agent refuses while fan-control runs (409).",
+        "operationId": "fans_api_v1_servers__host__fans_post",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FanCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{host}/gpu-limit": {
+      "post": {
+        "tags": [
+          "servers"
+        ],
+        "summary": "Gpu Limit",
+        "description": "GPU power limit in watts. The agent refuses while fan-control runs (409).",
+        "operationId": "gpu_limit_api_v1_servers__host__gpu_limit_post",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GpuLimitCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppConfig": {
+        "properties": {
+          "apiBase": {
+            "type": "string",
+            "title": "Apibase",
+            "default": "api/"
+          },
+          "basePath": {
+            "type": "string",
+            "title": "Basepath",
+            "default": "/"
+          },
+          "publicUrl": {
+            "type": "string",
+            "title": "Publicurl",
+            "default": ""
+          },
+          "frameParents": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Frameparents"
+          },
+          "login": {
+            "$ref": "#/components/schemas/Login"
+          },
+          "site": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Site",
+            "description": "machine names, roles and notes (private site file); empty = generic names"
+          }
+        },
+        "type": "object",
+        "title": "AppConfig",
+        "description": "GET /api/config: the group-standard runtime config, plus this installation's site block."
+      },
+      "CommandResult": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "cmd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cmd"
+          },
+          "at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "title": "CommandResult",
+        "description": "The agent's reply; extra fields (pct, until, mode, w, ...) depend on the command."
+      },
+      "FanCommand": {
+        "properties": {
+          "pct": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct"
+          },
+          "auto": {
+            "type": "boolean",
+            "title": "Auto",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "FanCommand",
+        "description": "Either a manual fan speed for every fan, or back to the iDRAC's automatic curve."
+      },
+      "GpuLimitCommand": {
+        "properties": {
+          "w": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "W",
+            "description": "GPU power limit in watts"
+          },
+          "index": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Index",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "w"
+        ],
+        "title": "GpuLimitCommand"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Health": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "mqtt": {
+            "$ref": "#/components/schemas/MqttState"
+          },
+          "servers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Servers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "mqtt",
+          "servers"
+        ],
+        "title": "Health"
+      },
+      "Login": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": false
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer",
+            "default": ""
+          },
+          "clientId": {
+            "type": "string",
+            "title": "Clientid",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "Login"
+      },
+      "MqttState": {
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "title": "Connected",
+            "default": false
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          }
+        },
+        "type": "object",
+        "title": "MqttState"
+      },
+      "ServerView": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "\"online\" / \"offline\" (the agent's last will)"
+          },
+          "idrac": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idrac"
+          },
+          "power": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power"
+          },
+          "gpu": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpu"
+          },
+          "safety": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety"
+          },
+          "runlevel": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runlevel"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "age_s": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Age S",
+            "description": "seconds since each part last arrived"
+          }
+        },
+        "type": "object",
+        "required": [
+          "host"
+        ],
+        "title": "ServerView"
+      },
+      "ServersResponse": {
+        "properties": {
+          "at": {
+            "type": "number",
+            "title": "At"
+          },
+          "mqtt": {
+            "type": "boolean",
+            "title": "Mqtt"
+          },
+          "servers": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServerView"
+            },
+            "type": "object",
+            "title": "Servers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "mqtt",
+          "servers"
+        ],
+        "title": "ServersResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

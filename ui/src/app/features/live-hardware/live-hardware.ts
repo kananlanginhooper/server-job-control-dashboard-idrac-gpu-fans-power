@@ -2,6 +2,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { dur } from '../../shared/format';
+import { ServersResponse, ServerView } from '../../core/api';
 
 /**
  * "Live hardware": one box per server from the sjc backend (/api/v1/servers, fed by each server's agent over MQTT).
@@ -32,11 +33,11 @@ import { dur } from '../../shared/format';
 })
 export class LiveHw {
   private readonly http = inject(HttpClient);
-  private readonly data = signal<any>(null);
+  private readonly data = signal<ServersResponse | null>(null);
   protected readonly mqtt = computed(() => !!this.data()?.mqtt);
 
   constructor() {
-    const load = () => this.http.get<any>('/api/v1/servers').subscribe({ next: d => this.data.set(d), error: () => this.data.set(null) });
+    const load = () => this.http.get<ServersResponse>('/api/v1/servers').subscribe({ next: d => this.data.set(d), error: () => this.data.set(null) });
     load();
     const t = setInterval(load, 5000);
     inject(DestroyRef).onDestroy(() => clearInterval(t));
@@ -48,7 +49,8 @@ export class LiveHw {
     return list.length ? list.map(s => this.row(s, d.at)) : null;
   });
 
-  private row(s: any, now: number) {
+  private row(sv: ServerView, now: number) {
+    const s: any = sv;   // each part is the agent's own JSON (services repo MQTT contract), read loosely
     const id = s.idrac || {}, pw = s.power || {}, sf = s.safety || {}, fc = sf.fan_control || {}, lim = sf.emergency_c || {};
     const temps: any[] = id.temps || [], fans: any[] = id.fans || [], cards: any[] = (s.gpu || {}).cards || [];
     const hot = (kind: string, c: number) => lim[kind] != null && c >= lim[kind] - 2 ? (c >= lim[kind] ? 'bad' : 'warn') : '';

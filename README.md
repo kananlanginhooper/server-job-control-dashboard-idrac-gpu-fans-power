@@ -14,7 +14,7 @@ power, fans, temperatures, GPUs, run modes and long-running jobs, and drives fan
 
 | Folder | What |
 |---|---|
-| `backend/` | FastAPI: `/api/v1/servers` from MQTT, control POSTs, `/api/config`, optional forward of other `/api/*` calls to an existing dashboard API |
+| `backend/` | FastAPI (`app/core/config.py`, `api/routes/`, `schemas/`, `services/`): `/api/v1/servers` from MQTT, control POSTs, `/api/config`, optional forward of other `/api/*` calls to an existing dashboard API. Tests: `pytest` in `backend/` |
 | `ui/` | Angular 20 standalone dashboard (zoneless, signals). Machine names and descriptions come from `/api/config` at runtime |
 | `mosquitto/` | Broker config (LAN only) |
 
@@ -40,6 +40,8 @@ docker compose up -d --build
 `COMPOSE_PROFILES=hub` runs the broker, backend and UI. Each server runs its own agent from the services repo. Every service restarts on its own.
 
 UI development: `cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json` (forwards `/api` to a backend on `localhost:8000`).
+
+API types: after changing a back-end schema, run `python backend/openapi_export.py` and then `cd ui && npm run api-types`; the UI imports the named types from `src/app/core/api.ts`.
 
 ## Config
 
