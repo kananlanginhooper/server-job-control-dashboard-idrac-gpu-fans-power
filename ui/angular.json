@@ -72,6 +72,43 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "demo": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "24kB",
+                  "maximumError": "32kB"
+                }
+              ],
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/demo.ts",
+                  "with": "src/app/demo.on.ts"
+                }
+              ],
+              "outputPath": {
+                "base": "../docs",
+                "browser": ""
+              },
+              "baseHref": "./",
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "demo/api",
+                  "output": "api"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"

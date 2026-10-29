@@ -46,3 +46,14 @@ UI development: `cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json`
 All settings are environment variables; see `.env.example` and `backend/app/settings.py`. The UI follows the group
 standard: `GET /api/config` returns `{ apiBase, basePath, publicUrl, frameParents, login: { enabled, issuer, clientId }, site }`,
 and every response sends `Content-Security-Policy: frame-ancestors 'self' $FRAME_ANCESTORS`.
+
+## Demo (GitHub Pages)
+
+`docs/` is a static build of the UI on generic mock data. It needs no back end: the mock API is plain files under
+`docs/api/`, timestamps are moved to "now" in the browser, and controls do nothing.
+
+- Rebuild: `cd ui && npm run build:demo`
+- Refresh the mock from a running back end: save `/api/state`, `/api/series`, `/api/iohist`, `/api/temphist` and
+  `/api/guardhist` to a folder, then run `python ui/demo/make_mock.py <folder> deploy/local/site.json`. It keeps the
+  shape and numbers, maps your machine names to `server-a`/`server-b`/`desk-1` and replaces every other label.
+  Run the public-repo guard on the result before committing it.

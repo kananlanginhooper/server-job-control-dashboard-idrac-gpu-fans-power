@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t } from './site';
+import { note, t } from './site';
 // "Needs attention" rules, ported 1:1 from render() / renderTasks() / addAlert() in the original page.
 // Each alert is [cls, html]; cls "" = red, "warn" = yellow. The html only carries <b> and values already escaped.
 import { dur, esc, fb, hhmm } from './fmt';
@@ -15,7 +15,7 @@ export const akey = (h: string) => String(h).replace(/<[^>]*>/g, '').replace(/[\
 function mainAlerts(s: any): Alert[] {
   const f = s.fast || {}, alerts: Alert[] = [];
   for (const [n, st] of Object.entries(f.nvme || {})) if (st && st !== 'live')
-    alerts.push(['', `<b>${esc(n)} is ${esc(st)}</b> — ${n === 'nvme1' ? '/n4 (990 PRO) dropped off the bus 2026-09-23 19:13. Needs a full power-off; then catalogue it read-only and copy files found nowhere else to /e.' : 'NVMe controller not live.'}`]);
+    alerts.push(['', `<b>${esc(n)} is ${esc(st)}</b> — ${esc(note('nvme:' + n)) || 'NVMe controller not live.'}`]);
   for (const m of f.mounts || []) if (m.shutdown) alerts.push(['', `<b>${esc(m.mount)} filesystem is shut down</b> (emergency read-only). No writes, no fsck until copied off.`]);
   if (f.edac && (f.edac.ce || f.edac.ue)) alerts.push([f.edac.ue ? '' : 'warn', `<b>Memory errors:</b> ${f.edac.ce} corrected, ${f.edac.ue} uncorrected (EDAC). Verify copies by hash.`]);
   if ((f.stuck || []).length) alerts.push(['', t(`<b>${f.stuck.length} process${f.stuck.length > 1 ? 'es' : ''} stuck in disk wait on the {main}</b> (no CPU progress for ${dur(Math.min(...f.stuck.map((x: any) => x.for_s)))}+): ${esc(f.stuck.slice(0, 3).map((x: any) => x.pid + ' ' + x.name.split(' ')[0]).join(', '))}. A drive or mount may be hung.`)]);

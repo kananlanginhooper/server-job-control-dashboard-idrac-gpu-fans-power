@@ -39,9 +39,10 @@ services:
     build: { context: ui }
     restart: unless-stopped
     depends_on: [backend]
-    ports: ["${SJC_UI_PORT:-8099}:80"]
+    ports: ["${SJC_UI_PORT:-8100}:80"]
     environment:
       FRAME_ANCESTORS: ${FRAME_ANCESTORS:-}
+      UI_BASE_PATH: ${UI_BASE_PATH:-/}   # must start and end with /
 
 
 volumes:

@@ -19,7 +19,7 @@ import { Kpi } from './servers';
     <div class="gpus" id="gpus">
       @if (tug(); as t) {
         <div class="server" [class.srv-red]="t.hot">
-          <h3>{{ S.boxGpu }} <span class="pill {{ t.live ? 'done' : 'failed' }}">{{ t.live ? 'live' : 'offline' }}</span>@if (t.hot) {<span class="pill failed">1 red</span>}<span class="role">in Tug@if (t.pcie) { · PCIe x{{ t.pcie }}@if (t.pcieMax) { <span class="warnc">(max x{{ t.pcieMax }})</span>}} · <span id="tgpu-src">{{ t.src }}</span></span></h3>
+          <h3>{{ S.boxGpu }} <span class="pill {{ t.live ? 'done' : 'failed' }}">{{ t.live ? 'live' : 'offline' }}</span>@if (t.hot) {<span class="pill failed">1 red</span>}<span class="role">in {{ S.Box }}@if (t.pcie) { · PCIe x{{ t.pcie }}@if (t.pcieMax) { <span class="warnc">(max x{{ t.pcieMax }})</span>}} · <span id="tgpu-src">{{ t.src }}</span></span></h3>
           @if (!t.live) {
             <p class="stale" [title]="t.err">{{ t.offline }}</p>
           } @else {
@@ -58,7 +58,7 @@ export class Gpus {
     const tv = s.tug || {}, g = (tv.fast || {}).gpu, live = !!(tv.ok && g), range = this.store.range(), RL = this.store.rangeLabel();
     const src = '· live, every 5 s' + (range > 7200 ? ' (only the last 2 h are kept)' : '');
     if (!live) return { live, hot: false, src, pcie: 0, pcieMax: 0, err: tv.error || '', kpis: [] as Kpi[], charts: [],
-      offline: tv.ok ? "Tug's agent reports no GPU (driver not loaded? check gpu-init on Tug)" : 'Tug is not answering (powered off, moving, or off the network)' };
+      offline: tv.ok ? t("{Box}'s agent reports no GPU (driver not loaded? check gpu-init on {Box})") : t('{Box} is not answering (powered off, moving, or off the network)') };
     const [w, b] = [83, 88], cls = g.temp >= b ? 'bad' : g.temp >= w ? 'warn' : '';   // AD102 slows down near 87-90°C
     const kpis: Kpi[] = [   // same five stats as the RTX 2080 Ti card
       { l: 'Temp', v: g.temp.toFixed(0) + '°C', sub: `yellow ${w} · red ${b}`, c: cls },

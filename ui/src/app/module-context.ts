@@ -5,7 +5,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
  * Standalone (:8094) keeps the defaults: API at /api/, storage keys unprefixed.
  */
 export interface ModuleContext { id: string; apiBase: string; }
-let ctx: ModuleContext = { id: '', apiBase: '/api/' };
+let ctx: ModuleContext = { id: '', apiBase: 'api/' };   // relative to <base href>, so the app works under any UI_BASE_PATH
 
 export function setContext(c: ModuleContext) { ctx = c; }
 

@@ -59,7 +59,7 @@ export class Env {
     const PWR: H[] = [...HOSTS, [t('{node}_gpu'), t('{nodeGpu}'), '--s1', false], ['tug_gpu', t('{boxGpu}'), '--t4', false], [t('{main}_peak'), t('{main} peak'), '--s3', true], [t('{node}_peak'), t('{node} peak'), '--s2', true]];   // peaks: iDRAC 30-s true peak
     const ENV = [
       { g: 'power', title: 'Power draw (peak)', fmt: Wf, axis: (v: number) => v ? Math.round(v) + ' W' : '0', minMax: 100, yRange: [0, 300], yStep: 50, hosts: PWR,
-        lab: (k: string) => k === t('{node}_gpu') ? t('{nodeGpu} (in {node})') : k === 'tug_gpu' ? t('{boxGpu} (in Tug)') : k === t('{node}') ? t('{node} (without GPU)') : k === t('{main}_peak') ? t('{main} peak (iDRAC, sub-second)') : k === t('{node}_peak') ? t('{node} peak (iDRAC, incl. GPU)') : k },
+        lab: (k: string) => k === t('{node}_gpu') ? t('{nodeGpu} (in {node})') : k === 'tug_gpu' ? t('{boxGpu} (in {Box})') : k === t('{node}') ? t('{node} (without GPU)') : k === t('{main}_peak') ? t('{main} peak (iDRAC, sub-second)') : k === t('{node}_peak') ? t('{node} peak (iDRAC, incl. GPU)') : k },
       { g: 'temp', title: 'Hottest sensor (peak)', fmt: Cf, axis: (v: number) => Math.round(v) + '°', minMax: 40, yRange: [45, 65], yStep: undefined, hosts: [...HOSTS, [t('{node}_gpu'), t('{nodeGpu}'), '--s2', 'dot']] as H[],
         lab: (k: string) => k === t('{node}_gpu') ? t('{nodeGpu} (in {node})') : k + ' hottest' },
       { g: 'fan', title: 'Fan speed (fastest fan, peak)', fmt: Rf, axis: (v: number) => v ? (v / 1000).toFixed(0) + 'k' : '0', minMax: 2000, yRange: [4000, 8000], yStep: 1000, hosts: [...HOSTS, [t('{node}_gpu'), t('{nodeGpu}'), '--s2', 'dot']] as H[],

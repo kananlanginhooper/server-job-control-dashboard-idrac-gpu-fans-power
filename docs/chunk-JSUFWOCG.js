@@ -1,0 +1,1 @@
+import{b as n}from"./chunk-PHE6ZYBN.js";import{c as o}from"./chunk-EVE25KCF.js";import{Sa as e,hb as t,ib as i,jb as p,y as r}from"./chunk-7WVZ6TWK.js";var l={providers:[r(),e(),t(p(),i([o,n]))]};export{l as appConfig};

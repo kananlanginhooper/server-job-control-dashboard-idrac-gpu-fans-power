@@ -1,0 +1,1 @@
+var n={main:"server-a",node:"server-b",box:"desk-1",Box:"Desk 1",nodeGpu:"GPU (node)",boxGpu:"GPU (desk)",owner:"the owner",roles:{},peers:{},mounts:{},devMount:{},notes:{}};function o(e){e&&Object.assign(n,e)}var s=e=>e.replace(/\{(main|node|box|Box|nodeGpu|boxGpu|owner)\}/g,(r,t)=>String(n[t])),i=e=>n.notes[e]||"";export{n as a,o as b,s as c,i as d};
