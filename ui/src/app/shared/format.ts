@@ -24,6 +24,9 @@ export const mbs = (v: any) => v == null ? '—' : (v / 1e6 >= 100 ? (v / 1e6).t
 export const hhmm = (t: number) => new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 export const pct1 = (f: number) => (f * 100).toFixed(f < 0.1 ? 1 : 0) + '%';
 
+/** max/min by loop: Math.max(...big) overflows the call stack on long series */
+export function maxOf(vals: Iterable<number>, start = -Infinity): number { let m = start; for (const v of vals) if (v > m) m = v; return m; }
+export function minOf(vals: Iterable<number>, start = Infinity): number { let m = start; for (const v of vals) if (v < m) m = v; return m; }
 export function niceMax(v: number, floor = 1e6): number {
   if (v <= 0) return floor;
   const e = Math.pow(10, Math.floor(Math.log10(v)));
@@ -39,7 +42,7 @@ export function fmtT(t: number, range: number): string {
 export function fitRange(vals: any[], pad: number, step: number): [number, number] | null {
   const v = vals.filter(x => x != null && isFinite(x));
   if (!v.length) return null;
-  const lo = Math.min(...v), hi = Math.max(...v), p = Math.max(pad, (hi - lo) * 0.12);
+  const lo = minOf(v), hi = maxOf(v), p = Math.max(pad, (hi - lo) * 0.12);
   return [Math.max(0, Math.floor((lo - p) / step) * step), Math.ceil((hi + p) / step) * step];
 }
 /** HTML fragment -> tooltip text, one line per block */

@@ -3,7 +3,7 @@ import { SITE } from '../../core/site';
 // Per-server history charts from /api/temphist and /api/iohist: every sensor, net per NIC, disk per drive, RAM used + bandwidth;
 // and one chart per GPU job feed (paused/stopped jobs hide, 2026-10-01).
 import { TrackOpts, LineOpts, Series } from '../../shared/charts/chart-types';
-import { hhmm, keyStyle, numSort, rate } from '../../shared/format';
+import { hhmm, keyStyle, maxOf, numSort, rate } from '../../shared/format';
 import { LegendItem } from '../../shared/legend';
 
 export interface ChartBlock<T> { legend: LegendItem[]; opts: T; }
@@ -70,7 +70,7 @@ export function gpuJobCharts(ioh: any, range: number): GpuJobChart[] {
     const mine = rows.filter(([, m]) => m[k]), last = mine[mine.length - 1];
     const stopped = !latest[k] || newest - last[0] > 90;   // not in the newest sample = its feed has stopped
     const idle = !stopped && !(last[1][k].rate > 0);
-    const perMin = Math.max(...mine.map(([, m]) => m[k].rate || 0)) < 1;   // slow job: show per minute
+    const perMin = maxOf(mine.map(([, m]) => m[k].rate || 0)) < 1;   // slow job: show per minute
     const mul = perMin ? 60 : 1, per = perMin ? '/min' : '/s';
     const unit = last[1][k].unit || '', f = (v: any) => v == null ? '—' : `${Number(v).toFixed(v < 10 ? 1 : 0)} ${unit}${per}`;
     const state = stopped ? `stopped · last update ${hhmm(last[0])}` : idle ? 'idle' : '';

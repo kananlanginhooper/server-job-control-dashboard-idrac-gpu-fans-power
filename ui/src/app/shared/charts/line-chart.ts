@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
-import { niceMax } from '../format';
+import { maxOf, minOf, niceMax } from '../format';
 import { LineOpts, Point } from './chart-types';
 import { chartHost, pageFont, lineData, lineSeries, nearest, row, esc, timeAxis, tipBox, tipTitle } from './chart-kit';
 
@@ -35,10 +35,10 @@ export class LineChart {
 
     const dv: number[] = [];
     for (const p of pts) for (const s of o.series) if (p[s.k] != null) dv.push(p[s.k]);
-    let ymin = 0, ymax = niceMax(Math.max(o.minMax || 1, ...dv.map(v => v || 0)), o.minMax || 1), grid = o.grid || 4;
+    let ymin = 0, ymax = niceMax(maxOf(dv.map(v => v || 0), o.minMax || 1), o.minMax || 1), grid = o.grid || 4;
     if (o.yRange) {
       let st = o.yStep || 5;
-      const lo = Math.min(...dv, o.yRange[0]), hi = Math.max(...dv, o.yRange[1]);
+      const lo = minOf(dv, o.yRange[0]), hi = maxOf(dv, o.yRange[1]);
       while (Math.ceil(hi / st) - Math.floor(lo / st) > (o.yMaxGrid || 8)) st *= 2;
       ymin = Math.floor(lo / st) * st; ymax = Math.ceil(hi / st) * st;
       grid = Math.round((ymax - ymin) / st);
