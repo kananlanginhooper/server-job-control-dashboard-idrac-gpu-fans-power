@@ -11,7 +11,11 @@ import { EmergencyPop } from './cards/emergency-pop';
 import { Servers } from './cards/servers';
 import { Gpus } from './cards/gpus';
 import { Env } from './cards/env';
-import { Catalogue, DriveHealth, DriveRegistry, Procs, Storage } from './cards/tables';
+import { DriveHealth } from './features/storage/drive-health';
+import { DriveRegistry } from './features/storage/drive-registry';
+import { Storage } from './features/storage/storage';
+import { Procs } from './features/storage/procs';
+import { Catalogue } from './features/storage/catalogue';
 import { Carve, Offsite } from './cards/offsite-carve';
 import { LiveHw } from './cards/live-hw';
 

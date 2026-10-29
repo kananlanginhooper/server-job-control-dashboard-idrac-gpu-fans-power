@@ -272,3 +272,12 @@ main > *, .col > *, .topsplit > *, .gpus > *, .servers > *, .srvgrid > *, .envgr
 /* Angular port additions */
 .lc { position: relative; }
 .tip[hidden] { display: none !important; }
+
+/* Material tables (mat-table) keep the dashboard's compact rows: same padding, borders and text as the plain tables */
+table.mat-mdc-table { background: transparent; width: 100%; font: inherit; letter-spacing: normal; color: inherit; }
+table.mat-mdc-table .mat-mdc-header-row, table.mat-mdc-table .mat-mdc-row { height: auto; }
+table.mat-mdc-table th.mat-mdc-header-cell, table.mat-mdc-table td.mat-mdc-cell {
+  padding: 5px 6px; border-bottom: 1px solid var(--line); color: inherit; font: inherit; letter-spacing: normal; vertical-align: middle;
+}
+table.mat-mdc-table th.mat-mdc-header-cell { padding: 4px 6px; color: var(--muted); font-weight: 550; white-space: nowrap; }
+table.mat-mdc-table .num { text-align: right; }

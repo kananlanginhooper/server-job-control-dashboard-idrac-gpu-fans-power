@@ -1,0 +1,22 @@
+<h2>Drive registry — every drive we know, by serial</h2>
+<div class="scroll" style="max-height:560px;overflow-y:auto">
+  <table mat-table id="drives" [dataSource]="rows()">
+    <ng-container matColumnDef="serial"><th mat-header-cell *matHeaderCellDef>Serial</th><td mat-cell *matCellDef="let d" class="mono">{{ d.serial }}</td></ng-container>
+    <ng-container matColumnDef="model"><th mat-header-cell *matHeaderCellDef>Model</th><td mat-cell *matCellDef="let d">{{ d.model }}</td></ng-container>
+    <ng-container matColumnDef="size"><th mat-header-cell *matHeaderCellDef class="num">Size</th><td mat-cell *matCellDef="let d" class="num">{{ d.size }}</td></ng-container>
+    <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let d"><span class="pill {{ d.pill }}">{{ d.status }}</span></td></ng-container>
+    <ng-container matColumnDef="hours"><th mat-header-cell *matHeaderCellDef class="num">Hours</th>
+      <td mat-cell *matCellDef="let d" class="num" [title]="d.hoursTip">{{ d.hours }}</td></ng-container>
+    <ng-container matColumnDef="errors"><th mat-header-cell *matHeaderCellDef>Errors</th><td mat-cell *matCellDef="let d" class="muted jd">{{ d.errors }}</td></ng-container>
+    <ng-container matColumnDef="recovery"><th mat-header-cell *matHeaderCellDef>Recovery?</th><td mat-cell *matCellDef="let d">{{ d.recovery }}</td></ng-container>
+    <ng-container matColumnDef="where"><th mat-header-cell *matHeaderCellDef>Where</th><td mat-cell *matCellDef="let d" class="mono">{{ d.where }}</td></ng-container>
+    <ng-container matColumnDef="role"><th mat-header-cell *matHeaderCellDef>Role</th><td mat-cell *matCellDef="let d">{{ d.role }}</td></ng-container>
+    <ng-container matColumnDef="lastCheck"><th mat-header-cell *matHeaderCellDef>Last check</th><td mat-cell *matCellDef="let d">{{ d.lastCheck }}</td></ng-container>
+    <ng-container matColumnDef="checks"><th mat-header-cell *matHeaderCellDef class="num">Checks</th><td mat-cell *matCellDef="let d" class="num">{{ d.checks }}</td></ng-container>
+    <ng-container matColumnDef="lastSeen"><th mat-header-cell *matHeaderCellDef>Last seen</th><td mat-cell *matCellDef="let d" class="muted">{{ d.lastSeen }}</td></ng-container>
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  </table>
+</div>
+<p class="sub">Drives the {{ S.main }} can see are registered automatically every minute. Anything new shows as <b>new — not checked</b>. Drives behind a PERC virtual disk (all {{ S.node }} drives) are only visible with perccli. They were entered from the plan.</p>
