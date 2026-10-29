@@ -1,0 +1,84 @@
+// Shared theme for every home-server dashboard (2026-10-29). Copy this file as-is into each app's
+// src/styles/theme.scss and list it first under "styles" in angular.json. The only per-app setting is --app-accent,
+// set in the app's own styles.scss (see the bottom of this file).
+//
+// - Angular Material 3, light and dark following the system (color-scheme: light dark; Material's tokens use
+//   light-dark(), so nothing needs a class or a toggle).
+// - Shared design tokens: spacing, radius, type scale, surfaces. Use them in component styles instead of raw numbers:
+//     padding: var(--app-space-3);  border-radius: var(--app-radius-m);  font: var(--app-text-sm);
+// - Material's own system tokens (--mat-sys-surface, --mat-sys-on-surface, --mat-sys-outline-variant, ...) are
+//   available too; the --app-* surface names below are short aliases for the common ones.
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light dark;
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: (
+      plain-family: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+      brand-family: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    ),
+    density: 0,
+  ));
+
+  // the app accent drives Material's primary color (buttons, focus, active tabs, ...)
+  @include mat.theme-overrides((
+    primary: var(--app-accent),
+  ));
+}
+
+:root {
+  // ---- accent: the one per-app token. Override it in the app's styles.scss, e.g.
+  //      :root { --app-accent: light-dark(#2f6f5e, #7cc4ae); }
+  --app-accent: light-dark(#2f6fdb, #5b93f0);
+
+  // ---- spacing (4 px grid)
+  --app-space-1: 4px;
+  --app-space-2: 8px;
+  --app-space-3: 12px;
+  --app-space-4: 16px;
+  --app-space-5: 24px;
+  --app-space-6: 32px;
+
+  // ---- radius
+  --app-radius-s: 6px;
+  --app-radius-m: 10px;
+  --app-radius-l: 16px;
+
+  // ---- type scale (font shorthands: weight size/line-height family)
+  --app-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --app-font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --app-text-xs: 400 11.5px/1.4 var(--app-font-family);
+  --app-text-sm: 400 13px/1.45 var(--app-font-family);
+  --app-text-md: 400 14px/1.5 var(--app-font-family);
+  --app-text-lg: 600 16px/1.4 var(--app-font-family);
+  --app-text-xl: 650 20px/1.3 var(--app-font-family);
+  --app-text-2xl: 700 28px/1.2 var(--app-font-family);
+
+  // ---- surfaces and text (aliases of Material system tokens)
+  --app-bg: var(--mat-sys-surface-container-lowest);
+  --app-card: var(--mat-sys-surface-container-low);
+  --app-ink: var(--mat-sys-on-surface);
+  --app-muted: var(--mat-sys-on-surface-variant);
+  --app-line: var(--mat-sys-outline-variant);
+
+  // ---- status colors (same in every app)
+  --app-ok: light-dark(#1f8a4c, #5fd08f);
+  --app-warn: light-dark(#b97a00, #e3a92b);
+  --app-bad: var(--mat-sys-error);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--app-bg);
+  color: var(--app-ink);
+  font: var(--app-text-md);
+}
+
+code, pre, kbd { font-family: var(--app-font-mono); }

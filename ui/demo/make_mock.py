@@ -109,13 +109,13 @@ def main():
     for name in ("state", "series", "iohist", "temphist", "guardhist"):
         d = json.loads((cap / f"{name}.json").read_text(encoding="utf-8"))
         d = {k: v for k, v in d.items() if k not in DROP} if isinstance(d, dict) else d
-        (out / name).write_text(scrub_numbers(json.dumps(m.value(None, d), separators=(",", ":"))), encoding="utf-8")
+        (out / f"{name}.json").write_text(scrub_numbers(json.dumps(m.value(None, d), separators=(",", ":"))), encoding="utf-8")
     roles = {DEMO["main"]: "main server · catalogue, dashboard", DEMO["node"]: "GPU server · {nics} · {via}", DEMO["box"]: "intake desktop"}
-    (out / "config").write_text(json.dumps({"apiBase": "api/", "basePath": "./", "publicUrl": "", "frameParents": [],
+    (out / "config.json").write_text(json.dumps({"apiBase": "api/", "basePath": "./", "publicUrl": "", "frameParents": [],
                                             "login": {"enabled": False, "issuer": "", "clientId": ""},
                                             "site": dict(DEMO, owner="the owner", roles=roles, peers={}),
                                             "demo": {"capturedAt": captured_at}}), encoding="utf-8")
-    (out / "v1" / "servers").write_text(json.dumps({"at": 0, "mqtt": False, "servers": {}}), encoding="utf-8")
+    (out / "v1" / "servers.json").write_text(json.dumps({"at": 0, "mqtt": False, "servers": {}}), encoding="utf-8")
     print("mock API written to", out)
 
 

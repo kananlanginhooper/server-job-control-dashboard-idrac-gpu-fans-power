@@ -6,7 +6,7 @@ import { dur } from './fmt';
 import { RangeSeg } from './ui/range-seg';
 import { NowTasks } from './cards/now-tasks';
 import { Pipeline } from './cards/pipeline';
-import { FanControls } from './cards/fan-controls';
+import { FanControls } from './features/fan-controls/fan-controls';
 import { EmergencyPop } from './cards/emergency-pop';
 import { Servers } from './cards/servers';
 import { Gpus } from './cards/gpus';

@@ -1,11 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { t, SITE } from '../site';
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
-import { DashboardStore } from '../dashboard.store';
-import { TrackChart } from '../shared/charts/track-chart';
-import { TrackOpts } from '../shared/charts/chart-types';
-import { envData, powerLine, withTotals } from '../derived';
-import { esc, fitRange, gpuFanPct, hhmm, keyStyle, num, plainText } from '../fmt';
+import { t, SITE } from '../../site';
+import { TrackOpts } from '../../shared/charts/chart-types';
+import { envData, powerLine, withTotals } from '../../derived';
+import { esc, fitRange, gpuFanPct, hhmm, keyStyle, num, plainText } from '../../fmt';
 
 const MODE_TIP: Record<string, string> = {
   normal: t('Automatic: the server is idle. Case fans 4,000 RPM, {node} card fan 75%, GPU at the active profile\'s limit (thermal-profiles.md).'),
@@ -19,76 +16,9 @@ const MT_TIP = t('Meeting Mode (back 2026-09-30, {owner}: priority is lower fan 
 const GPU_TIP = t('Manual GPU switch ({owner} 2026-09-30), independent of the run mode: On = no GPU work at all. The {node} gpu-switch service pauses the Copilot runner (HOLD + graceful stop) and stops Ollama (frees VRAM); the image runner waits and resumes when switched back.');
 const tm = (t: number) => new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-/** Fan & quiet controls: fan-control status per server, Quick Cool / Meeting / GPU switch, run profile, total power + power-scaler caps, PSU voltage in Low Power. */
-@Component({
-  selector: '[app-fan-controls]',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TrackChart],
-  template: `
-    <h2>Fan &amp; quiet controls</h2>
-    <div class="fanctl" id="fanctl">
-      @if (v(); as v) {
-        <div class="fstat">
-          <div class="fhost" [title]="v.st730.tip" style="cursor:help"><span class="fhn">{{ S.main }}</span><span class="fmode m-{{ v.st730.k }}" [title]="v.st730.modeTip">{{ v.st730.label }}</span>@if (v.st730.pct != null) {<span class="fpct">fans {{ v.st730.pct }}% <span class="muted">ⓘ</span></span>}</div>
-          <div class="fhost-wrap" [title]="v.gpuTip" style="cursor:help">
-            <div class="fhost" [title]="v.st720.tip" style="cursor:help"><span class="fhn">{{ S.node }}</span><span class="fmode m-{{ v.st720.k }}" [title]="v.st720.modeTip">{{ v.st720.label }}</span>@if (v.st720.pct != null) {<span class="fpct">fans {{ v.st720.pct }}% <span class="muted">ⓘ</span></span>}</div>
-            @if (v.gpuPaused) { <div class="fwhy warnc">GPU jobs paused for Low Power: {{ v.gpuPaused }} (resume when Low Power is switched off)</div> }
-          </div>
-        </div>
-        <div class="row">
-          <button id="qc-btn" class="tog" [class.on]="v.qc" [attr.aria-pressed]="v.qc" [disabled]="store.busy().qc" [title]="QC_TIP" (click)="store.quickCool()">Quick Cool <b>{{ v.qc ? 'On' : 'Off' }}</b></button>
-          <button id="meeting-btn" class="tog" [class.on-m]="v.mt.want" [attr.aria-pressed]="v.mt.want" [disabled]="store.busy().meeting" [title]="MT_TIP" (click)="store.meeting()">Meeting Mode <b>{{ v.mt.want ? 'On' : 'Off' }}</b></button>
-          <button id="gpu-btn" class="tog" [class.on-m]="v.gpuOff" [attr.aria-pressed]="v.gpuOff" [disabled]="store.busy().gpu" [title]="GPU_TIP" (click)="store.gpu()">Disable GPU <b>{{ v.gpuOff ? 'On' : 'Off' }}</b></button>
-        </div>
-        @if (v.hold) { <div class="row"><span class="pill queued">plan</span><span class="muted">{{ v.hold }}</span></div> }
-        <div class="row"><span class="muted">Run profile</span>
-          <span class="seg rp">
-            @for (b of v.rpButtons; track b.label) {
-              <button class="rp-btn" [class.cur]="b.cur" [attr.aria-pressed]="b.cur" [disabled]="store.busy().rp" [title]="RP_TIP" (click)="store.runProfile(b.p, b.w)">{{ b.label }}</button>
-            }
-          </span>
-          @for (w of v.rpWarn; track $index) { <span class="warnc">{{ w }}</span> }
-          @if (v.override) { <span class="muted">{{ v.override }}</span> }
-        </div>
-        @if (v.qc) { <div class="row" [innerHTML]="v.qcText"></div> }
-        @if (v.mt.want || v.mt.turning) { <div class="row"><span>Meeting Mode:</span><span [innerHTML]="v.mt.text"></span></div> }
-      }
-    </div>
-    @if (charts(); as c) {
-      <div class="power-hi" id="ctl-power">
-        <div class="legend" id="leg-power-hi">
-          <span><i style="background:var(--s1)"></i>Total (both servers) <b>{{ c.legTotal }}</b></span><span><i style="background:var(--t6)"></i>Peak <b>{{ c.legPeak }}</b><span class="muted"> (iDRAC, sub-second)</span></span><span class="muted">Adaptive line {{ c.line }} W</span>
-        </div>
-        <app-track-chart [opts]="c.powerHi" />
-      </div>
-      <div class="throttle-chart" id="ctl-throttle">
-        <div class="legend" id="leg-throttle">
-          <span><b>Throttling by the power scaler</b> (caps it sets to hold the line; normal cap when none)</span>
-          @for (e of c.guardEv; track $index) { <span [title]="e.tip">{{ e.at }} <b>{{ e.lab }}</b> {{ e.what }}</span> }
-          @empty { <span class="muted">no cap changes in this window</span> }
-        </div>
-        <app-track-chart [opts]="c.throttle" />
-      </div>
-      <div class="volt-chart" id="ctl-volt">
-        <div class="legend" id="leg-volt">
-          @for (p of c.psus; track p.l) { <span><i [style]="p.key"></i>{{ p.l }} <b>{{ p.v }}</b><span [class]="p.warn ? 'warnc' : 'muted'"> {{ p.note }}</span></span> }
-        </div>
-        <app-track-chart [opts]="c.volt" />
-      </div>
-    }`,
-})
-export class FanControls {
-  protected readonly S = SITE;
-  protected readonly store = inject(DashboardStore);
-  protected readonly QC_TIP = QC_TIP; protected readonly MT_TIP = MT_TIP; protected readonly GPU_TIP = GPU_TIP; protected readonly RP_TIP = RP_TIP;
+/** Everything the controls show: fan-control status per server, Quick Cool / Meeting / GPU switch, run profile. */
+export function controlsView(s: any) {
 
-  constructor() {
-    // PSU input voltage shows only in Low Power or Meeting Mode: .show-volt on the app host drives the CSS
-    effect(() => { const v = this.v(); this.store.showVolt.set(!!(v && v.lowOn)); });
-  }
-
-  protected readonly v = computed(() => {
-    const s = this.store.state(); if (!s) return null;
     const now = s.now;
     const fc730 = (s.fast || {}).fan_control || {}, r7 = (s.remote || {}).fast || {}, fc720 = r7.fan_control || {}, fg = fc720.gpu, gpu = r7.gpu || {};
     const lowOn = ((s.meeting || {}).on) || [fc730, fc720].some(f => f.profile === 'lowpower' || f.mode === 'meeting');
@@ -161,12 +91,15 @@ export class FanControls {
       hold: holdOn ? `Planned: ${hold.profile} until ${new Date(hold.until * 1000).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })} (${hold.why || ''}). Nothing switches automatically; any manual change (switch, Meeting Mode, Quick Cool) applies as normal.` : '',
       mt: { want: mwant, text: mtext, turning: /turning/.test(mtext) },
     };
-  });
+}
+export type ControlsView = ReturnType<typeof controlsView>;
+export type HostStatus = ControlsView['st730'];
+export type RunProfileButton = ControlsView['rpButtons'][number];
 
-  protected readonly charts = computed(() => {
-    const s = this.store.state(); if (!s) return null;
-    const range = this.store.range(), RL = this.store.rangeLabel();
-    const env = envData(s, this.store.series(), range), tp = withTotals(env.pts), line = powerLine(s);
+/** The three charts under the controls: total power vs the line, power-scaler caps, PSU voltage (Low Power). */
+export function chartsView(s: any, series: any, guard: any, range: number, RL: string) {
+
+    const env = envData(s, series, range), tp = withTotals(env.pts), line = powerLine(s);
     const Wf = (v: any) => v == null ? '—' : Math.round(v) + ' W', Vf = (v: any) => v == null ? '—' : Math.round(v) + ' V';
     const cur = tp.filter(p => p['power_total'] != null).slice(-1)[0], pkc = tp.filter(p => p['power_peak'] != null).slice(-1)[0];
     const pr = fitRange(tp.flatMap(p => [p['power_total'], p['power_peak']]), 25, 25) || [800, 1300];
@@ -177,7 +110,7 @@ export class FanControls {
         series: [{ k: 'power_total', label: 'Total', short: 'Total', color: '--s1' }, { k: 'power_peak', label: 'Peak (iDRAC)', short: 'Peak', color: '--t6' }, { k: 'power_line', label: 'Adaptive line', short: 'line', color: '--s2', dash: true }] }] };
 
     // power scaler throttle activity to hold the line: one chart, all caps in watts; without a throttle each line sits at its normal cap
-    const G = this.store.guard() || {}, nowS = Date.now() / 1000, x0 = nowS - range, P = (G.points || []).slice().sort((a: any, b: any) => a[0] - b[0]);
+    const G = guard || {}, nowS = Date.now() / 1000, x0 = nowS - range, P = (G.points || []).slice().sort((a: any, b: any) => a[0] - b[0]);
     const N = G.normal || { [SITE.main]: 550, [`${SITE.node}_total`]: 190, gpu: 210 };
     const step = Math.max(60, Math.round(range / 400)), gpts: any[] = [];
     let i = 0, c: any = null;
@@ -212,5 +145,7 @@ export class FanControls {
       line: num(line), legTotal: cur ? Wf(cur['power_total']) : '—', legPeak: pkc ? Wf(pkc['power_peak']) : '—', powerHi, throttle, volt, psus,
       guardEv: ev.slice(-4).reverse().map((e: any) => ({ at: hhmm(e[0]), lab: lab(e), what: String(e[2]).replace(t('{node}gpu'), 'GPU'), tip: e[3] })),
     };
-  });
 }
+export type ChartsView = ReturnType<typeof chartsView>;
+
+export const TIPS = { QC_TIP, MT_TIP, GPU_TIP, RP_TIP };

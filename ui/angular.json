@@ -50,7 +50,10 @@
                 "input": "public"
               }
             ],
-            "styles": []
+            "styles": [
+              "src/styles/theme.scss",
+              "src/styles/app.scss"
+            ]
           },
           "configurations": {
             "production": {
@@ -109,6 +112,28 @@
                   "output": "api"
                 }
               ]
+            },
+            "demo-dev": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/app/demo.ts",
+                  "with": "src/app/demo.on.ts"
+                }
+              ],
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "demo/api",
+                  "output": "api"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -121,6 +146,9 @@
             },
             "development": {
               "buildTarget": "sjc-ui:build:development"
+            },
+            "demo": {
+              "buildTarget": "sjc-ui:build:demo-dev"
             }
           },
           "defaultConfiguration": "development"

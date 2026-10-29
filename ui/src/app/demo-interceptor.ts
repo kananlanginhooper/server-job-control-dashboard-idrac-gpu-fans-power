@@ -16,14 +16,14 @@ function shift(v: unknown, d: number): unknown {
 }
 
 /**
- * Demo only: GETs read the static mock (query strings dropped, since a static host ignores them) with every timestamp
+ * Demo only: GETs read the static mock files (<path>.json; query strings dropped) with every timestamp
  * moved to "now", so live views and charts look current. POSTs (controls) answer ok and change nothing.
  */
 export const demoInterceptor: HttpInterceptorFn = (req, next) => {
   if (!DEMO) return next(req);
-  if (req.method !== 'GET') return of(new HttpResponse({ status: 200, body: { ok: true, demo: true, note: 'demo: controls do nothing' } }));
+  if (req.method !== 'GET') return of(new HttpResponse({ status: 200, body: { ...(req.body as object), ok: true, at: Date.now() / 1000, by: 'demo' } }));
   const d = capturedAt ? Date.now() / 1000 - capturedAt : 0;
-  return next(req.clone({ url: req.url.split('?')[0] })).pipe(map(ev => {
+  return next(req.clone({ url: req.url.split('?')[0] + '.json' })).pipe(map(ev => {
     if (!(ev instanceof HttpResponse) || !d) return ev;
     const text = typeof ev.body === 'string';
     let body: unknown = text ? JSON.parse(ev.body as string) : ev.body;
