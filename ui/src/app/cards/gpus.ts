@@ -2,8 +2,8 @@
 import { t, SITE } from '../site';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DashboardStore } from '../dashboard.store';
-import { LineChart } from '../charts/line-chart';
-import { LineOpts, Point } from '../charts/chart-types';
+import { LineChart } from '../shared/charts/line-chart';
+import { LineOpts, Point } from '../shared/charts/chart-types';
 import { Legend, LegendItem } from '../ui/legend';
 import { GPU_FAN_MAX_RPM, fb, gpuFanPct, keyStyle, num } from '../fmt';
 import { gpuJobCharts } from './server-charts';

@@ -2,8 +2,8 @@
 import { t, SITE } from '../site';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DashboardStore } from '../dashboard.store';
-import { LineChart } from '../charts/line-chart';
-import { LineOpts } from '../charts/chart-types';
+import { LineChart } from '../shared/charts/line-chart';
+import { LineOpts } from '../shared/charts/chart-types';
 import { Bar } from '../ui/bar';
 import { Legend } from '../ui/legend';
 import { dur, keyStyle, num, rate } from '../fmt';

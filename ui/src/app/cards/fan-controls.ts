@@ -2,8 +2,8 @@
 import { t, SITE } from '../site';
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { DashboardStore } from '../dashboard.store';
-import { TrackChart } from '../charts/track-chart';
-import { TrackOpts } from '../charts/chart-types';
+import { TrackChart } from '../shared/charts/track-chart';
+import { TrackOpts } from '../shared/charts/chart-types';
 import { envData, powerLine, withTotals } from '../derived';
 import { esc, fitRange, gpuFanPct, hhmm, keyStyle, num, plainText } from '../fmt';
 

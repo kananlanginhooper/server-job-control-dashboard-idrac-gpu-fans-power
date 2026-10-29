@@ -6,8 +6,8 @@ const role = (host: string, live: Record<string, string>) =>
   (SITE.roles[host] || host).replace(/\{(\w+)\}/g, (m, k) => live[k] ?? m);
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DashboardStore } from '../dashboard.store';
-import { LineChart } from '../charts/line-chart';
-import { TrackChart } from '../charts/track-chart';
+import { LineChart } from '../shared/charts/line-chart';
+import { TrackChart } from '../shared/charts/track-chart';
 import { Legend } from '../ui/legend';
 import { RangeSeg } from '../ui/range-seg';
 import { GPU_FAN_MAX_RPM, Limits, driveKind, dur, fb, gpuFanPct, ipmiKind, num, numSort, rate } from '../fmt';

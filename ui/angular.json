@@ -94,7 +94,7 @@
                 }
               ],
               "outputPath": {
-                "base": "../docs",
+                "base": "dist/demo",
                 "browser": ""
               },
               "baseHref": "./",

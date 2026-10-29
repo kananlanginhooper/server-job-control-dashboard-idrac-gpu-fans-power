@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Data shaping shared by more than one card (power / temperature / fan history).
-import { Point } from './charts/chart-types';
+import { Point } from './shared/charts/chart-types';
 import { SITE } from './site';
 
 export interface EnvData { liveMode: boolean; pts: Point[]; now: any; bucket: number; }
