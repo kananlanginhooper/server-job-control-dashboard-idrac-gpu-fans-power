@@ -957,6 +957,62 @@ button.dx:hover {
   opacity: 0.6;
   cursor: wait;
 }
+
+/* Fan & Quiet Controls in Material (2026-10-30): the generic .fanctl button rule above also hit the buttons inside
+   the Material toggles, so the selected run profile looked like the rest. One shape for every control (8 px corners,
+   38 px tall, 12-14 px sides); the selected profile and any switch that is On are filled with the accent. */
+/* 1 px gaps over a line-colored group = dividers that stay right when the profiles wrap onto a second row */
+.fanctl mat-button-toggle-group {
+  flex-wrap: wrap;
+  gap: 1px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--line);
+}
+.fanctl .mat-button-toggle {
+  flex: 1 1 auto;
+  border: 0 !important;
+  background: var(--card);
+}
+.fanctl .mat-button-toggle-button {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: var(--muted);
+}
+.fanctl .mat-button-toggle-label-content {
+  padding: 0 12px;
+  line-height: 36px;
+}
+.fanctl .mat-button-toggle-checked .mat-button-toggle-button {
+  background: color-mix(in srgb, var(--accent) 32%, var(--card));
+  color: var(--ink);
+  font-weight: 650;
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+.fanctl .mat-mdc-button-base {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+.fanctl .mat-mdc-button-base b {
+  margin-left: 4px;
+  color: var(--muted);
+  font-weight: 650;
+}
+.fanctl .mat-mdc-button-base[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 32%, var(--card));
+  border-color: var(--accent);
+}
+.fanctl .mat-mdc-button-base[aria-pressed='true'] b {
+  color: var(--ink);
+}
 .meeting {
   display: flex;
   align-items: center;
