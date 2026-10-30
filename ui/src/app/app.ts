@@ -5,6 +5,7 @@ import {
   ViewEncapsulation,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import { DashboardStore } from './core/dashboard.store';
 import { buildAlerts } from './features/alerts/alerts';
@@ -37,7 +38,7 @@ import { LiveHw } from './features/live-hardware/live-hardware';
   // own shadow root: the page CSS stays inside this module when the wrapper hosts it (MODULES.md)
   encapsulation: ViewEncapsulation.ShadowDom,
   styleUrl: '../styles.css',
-  host: { '[class.show-volt]': 'store.showVolt()' },
+  host: { '[class.show-volt]': 'store.showVolt()', '(click)': 'tapTitle($event)' },
   imports: [
     RangeSeg,
     NowTasks,
@@ -122,7 +123,10 @@ import { LiveHw } from './features/live-hardware/live-hardware';
       </div>
       <div class="col c-off"><section class="card s4" app-offsite></section></div>
       <div class="col c-carve"><section class="card s8" app-carve></section></div>
-    </main>`,
+    </main>
+    @if (tapTip(); as t) {
+      <div class="taptip" role="status" (click)="tapTip.set('')">{{ t }}</div>
+    }`,
 })
 export class App {
   protected readonly S = SITE;
@@ -137,6 +141,26 @@ export class App {
       ? { stale: true, text: `stats ${dur(age)} old` }
       : { stale: false, text: 'live · ' + new Date(s.now * 1000).toLocaleTimeString() };
   });
+
+  /** Phones have no hover: a tap on a non-control element with a title shows that title for a few seconds. */
+  protected readonly tapTip = signal('');
+  private tapTimer = 0;
+  protected tapTitle(ev: Event) {
+    if (!matchMedia('(hover: none)').matches) return;
+    let text = '';
+    for (const t of ev.composedPath()) {
+      if (!(t instanceof Element) || t.classList.contains('taptip')) break;
+      if (t.matches('button, a[href], input, select, textarea, [role=button]')) break;
+      const title = t.getAttribute('title');
+      if (title) {
+        text = title;
+        break;
+      }
+    }
+    clearTimeout(this.tapTimer);
+    this.tapTip.set(text);
+    if (text) this.tapTimer = window.setTimeout(() => this.tapTip.set(''), 5000);
+  }
 
   protected readonly alerts = computed(() => {
     const s = this.store.state();

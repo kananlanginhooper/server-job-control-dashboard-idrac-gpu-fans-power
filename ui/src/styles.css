@@ -1423,3 +1423,81 @@ table.mat-mdc-table th.mat-mdc-header-cell {
 table.mat-mdc-table .num {
   text-align: right;
 }
+
+/* Phone pass 2 (DASHBOARD-REQUIREMENTS 5a, 2026-10-29): no horizontal scroll at 360-414 px, 44 px tap targets,
+   14 px minimum text, and a bar for titles tapped on touch screens (app.ts tapTitle). */
+.fanctl {
+  grid-template-columns: minmax(0, 1fr);
+}
+.fanctl > * {
+  min-width: 0;
+}
+.taptip {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  z-index: 1000;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 14px;
+  white-space: pre-line;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+}
+@media (pointer: coarse), (max-width: 700px) {
+  button.dx,
+  #alerts .alert button.dx {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .seg button,
+  .fanctl button,
+  .fanctl .mat-button-toggle-button,
+  .fanctl .mat-mdc-button-base {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (max-width: 700px), (pointer: coarse) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .fanctl mat-button-toggle-group {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .fanctl,
+  .fanctl button,
+  .fwhy,
+  td,
+  th,
+  .card .muted,
+  .card .mono,
+  .pill,
+  .chip,
+  .legend,
+  .srvh,
+  .srvgrid .srvh,
+  .card h2,
+  .l,
+  .stg,
+  .m,
+  .sub,
+  #pipe .pjd,
+  #pipe .pl,
+  .seg button,
+  .nt-h,
+  .alert,
+  button.dx,
+  .chips .lbl,
+  .role,
+  .offb .n,
+  .gpu-h,
+  .log {
+    font-size: 14px !important;
+  }
+}
