@@ -93,3 +93,18 @@ pre,
 kbd {
   font-family: var(--app-font-mono);
 }
+
+// Tab strips scroll with a finger instead of arrow buttons (paging arrows are clumsy on a phone, and the strip
+// doesn't drag). Opt in per strip with disablePagination; then it is a plain horizontal scroller:
+//   <nav mat-tab-nav-bar [tabPanel]="panel" [disablePagination]="true">
+// Keep the current tab in view after navigation with activeLink.scrollIntoView({ block: 'nearest', inline: 'nearest' }).
+.mat-mdc-tab-nav-bar:not(.mat-mdc-tab-header-pagination-controls-enabled)
+  .mat-mdc-tab-link-container {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

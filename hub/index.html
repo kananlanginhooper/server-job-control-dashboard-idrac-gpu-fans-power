@@ -285,6 +285,17 @@ main > *, .col > *, .topsplit > *, .gpus > *, .servers > *, .srvgrid > *, .envgr
   .srvh, .srvgrid .srvh, .card h2, .kpi .l, .l, .stg, .jn, .m, .sub, #pipe .pjd, #pipe .pl, .seg button, .nt-h, .alert, button.dx,
   .chips .lbl, .role, .offb .n, .gpu-h, .log { font-size: 14px !important; }
 }
+/* Phone header (owner 2026-10-29: the header spent the screen on the title): at 600 px or less it is one row,
+   the live status plus the range buttons as a strip that scrolls with a finger. */
+@media (max-width: 600px) {
+  header { flex-wrap: nowrap; align-items: center; gap: 8px; padding: 0 12px; }
+  header h1, header .grange > .sub { display: none; }
+  header > .sub { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header .grange { flex: 0 1 auto; min-width: 0; margin-left: 0; }
+  header .seg.ranges { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  header .seg.ranges::-webkit-scrollbar { display: none; }
+  header .seg.ranges button { flex: 0 0 auto; }
+}
 </style>
 </head>
 <body>
