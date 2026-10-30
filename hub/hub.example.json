@@ -27,5 +27,11 @@
   "owner": "the owner",
   "router_ip": "192.0.2.1",
   "ssh_key": "~/.ssh/id_ed25519",
-  "ssh_user_at": "owner@"
+  "ssh_user_at": "owner@",
+  "MAIN_UC": "MAIN",
+  "NODE_UC": "NODE",
+  "box_lan_ip": "192.0.2.30",
+  "guard_name": "power guard",
+  "node_gpu_num": "GPU",
+  "owner_lc": "owner"
 }
