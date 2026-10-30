@@ -1796,11 +1796,25 @@ document.addEventListener("click", ev => {
   const b = ev.target.closest(".ranges button"); if (!b) return;
   SPEED.range = +b.dataset.r; SER = null;
   try { localStorage.setItem("graphRange", String(SPEED.range)); } catch (e) {}
-  markRange(); if (LAST) render(LAST); loadSpeed();
+  markRange(); showRange(); if (LAST) render(LAST); loadSpeed();
 });
 window.addEventListener("resize", () => { drawSpeed(); if (LAST) render(LAST); });
+// Shareable deep links (DASHBOARD-REQUIREMENTS 3.7, 2026-10-30): the graph range is the page's one view setting, kept
+// in the address as #range=1h (a hash, so the hub serves "/" unchanged) and reported to the wrapper when framed,
+// only to a frame_parents origin. A shared link's range wins over the remembered one.
+const FRAME_PARENTS = "@@CFG:frame_parents@@".split(" ").filter(Boolean);
+const rangeBtn = r => [...$("#ranges").children].find(b => b.dataset.r == r || b.textContent === r);
+function showRange() {
+  const hash = "#range=" + rangeBtn(SPEED.range).textContent;
+  history.replaceState(history.state, "", location.pathname + location.search + hash);
+  if (window.parent === window) return;
+  const parent = location.ancestorOrigins?.[0] ?? (document.referrer && new URL(document.referrer).origin);
+  if (parent && FRAME_PARENTS.includes(parent))
+    window.parent.postMessage({type: "route", path: location.pathname + location.search + hash}, parent);
+}
 try { const v = +localStorage.getItem("graphRange"); if (RLABEL[v]) SPEED.range = v; } catch (e) {}
-markRange(); loadSpeed(); setInterval(loadSpeed, 60000);
+{ const b = rangeBtn((location.hash.match(/^#range=(\w+)$/) || [])[1]); if (b) SPEED.range = +b.dataset.r; }
+markRange(); showRange(); loadSpeed(); setInterval(loadSpeed, 60000);
 
 async function tick() {
   try { const r = await fetch("/api/state", {cache: "no-store"}); render(await r.json()); }

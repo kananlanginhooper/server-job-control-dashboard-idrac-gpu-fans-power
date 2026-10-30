@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Limits, RLABEL } from '../shared/format';
 import { lsKey } from './module-context';
+import { rangeFromUrl, showRange } from './deep-link';
 
 /**
  * All live data for the page, polled from the same app.py endpoints the original page uses:
@@ -34,6 +35,10 @@ export class DashboardStore {
     } catch {
       /* storage blocked */
     }
+    // a shared link's ?range= wins over the remembered one
+    const u = rangeFromUrl();
+    if (u) this.range.set(u);
+    showRange(this.range());
     const timers = [
       setInterval(() => this.tick(), 5000),
       setInterval(() => this.loadSeries(), 60000),
@@ -106,6 +111,7 @@ export class DashboardStore {
 
   setRange(r: number) {
     this.range.set(r);
+    showRange(r);
     this.series.set(null);
     try {
       localStorage.setItem(lsKey('graphRange'), String(r));

@@ -1,5 +1,6 @@
 import { ModuleContext, setContext } from './app/core/module-context';
 import { setSite } from './app/core/site';
+import { setFrameParents } from './app/core/deep-link';
 import { setDemoCapture } from './app/core/demo-interceptor';
 import { DEMO } from './app/core/demo';
 import { AppConfig } from './app/core/api';
@@ -15,6 +16,7 @@ async function loadConfig(apiBase = 'api/'): Promise<void> {
       if (r.ok) {
         const c: AppConfig & { demo?: { capturedAt?: number } } = await r.json();
         setSite(c.site);
+        setFrameParents(c.frameParents);
         setDemoCapture(c.demo?.capturedAt);
         return;
       }

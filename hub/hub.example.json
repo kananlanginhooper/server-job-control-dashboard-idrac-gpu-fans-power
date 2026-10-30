@@ -33,5 +33,6 @@
   "box_lan_ip": "192.0.2.30",
   "guard_name": "power guard",
   "node_gpu_num": "GPU",
-  "owner_lc": "owner"
+  "owner_lc": "owner",
+  "frame_parents": "http://localhost:8097"
 }
