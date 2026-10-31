@@ -667,6 +667,7 @@ power = {"live": deque(maxlen=240), "acc": {}, "minute": None}
 env = {"live": deque(maxlen=150), "acc": {}, "minute": None, "last": 0}
 gpu_live = {"pts": deque(maxlen=180), "ts": None}
 box_gpu_live = {"pts": deque(maxlen=1440), "at": None}   # GPU in the intake box, from the intake box's agent every 5 s, 2 h (2026-10-26)
+laptop_gpu_live = {"pts": deque(maxlen=1440), "at": None}   # the laptop's GPU (now a GPU worker), from the laptop agent's push, 2 h (2026-10-31)
 
 
 def host_temp_max(host, F, drives):
@@ -938,6 +939,17 @@ def sample_box_gpu(t):
                                 "mem_bw": g.get("mem_util"), "pcie_gen": g.get("pcie_gen"), "pcie_width": g.get("pcie_width")})
 
 
+def sample_laptop_gpu(t):
+    with lock:
+        lv = laptop_view()
+    g = (lv.get("fast") or {}).get("gpu") or {}
+    if not g or not lv.get("at") or t - lv["at"] > 30 or lv["at"] == laptop_gpu_live["at"]:
+        return
+    laptop_gpu_live["at"] = lv["at"]
+    laptop_gpu_live["pts"].append({"t": lv["at"], "temp": g.get("temp"), "draw": g.get("power_w"), "cap": g.get("power_limit_w"), "util": g.get("util"),
+                                   "mem": g.get("mem_used"), "mem_total": g.get("mem_total"), "mem_bw": g.get("mem_util"), "pcie_width": g.get("pcie_width")})
+
+
 def sample_env(t, own):
     try:
         log_fan_modes(own)
@@ -951,6 +963,10 @@ def sample_env(t, own):
         sample_box_gpu(t)
     except Exception as e:
         print(f"{BOX} gpu live:", e, flush=True)
+    try:
+        sample_laptop_gpu(t)
+    except Exception as e:
+        print("laptop gpu live:", e, flush=True)
     if t - env["last"] < 4.5:
         return
     env["last"] = t
@@ -2264,7 +2280,7 @@ class H(BaseHTTPRequestHandler):
                 s = {"fast": state["fast"], "slow": state["slow"], "db": state["db"], "updated": state["updated"],
                      NODE: dict(state[NODE], folders=NODE_FOLDERS), "remote": remote_view(), BOX: box_view(),
                      "history": list(state["history"]), "roadmap": roadmap(), "now": time.time(), "remaining": remaining_state(),
-                     "laptop": laptop_view(), "health": state.get("health", {}), "lapjobs": state.get("lapjobs", {}), "env_live": list(env["live"]), "gpu_live": list(gpu_live["pts"]), f"{BOX}_gpu_live": list(box_gpu_live["pts"]), "tasks": tasks_list(time.time()), "offsite": OFFSITE["now"], "job_locks": job_status(job_locks(), tasks_list(time.time()), None, carve_progress()), "carve_progress": carve_progress(), "lapcheck": {"at": LAPCHECK["at"], "rows": LAPCHECK["rows"]}, "sel": state.get("sel"), "carve": carve_view(), "meeting": meeting_desired(), "gpu_switch": gpu_desired(), "dismissed": dismissed(), "quickcool": qc_desired(), "runprofile": {"desired": rp_desired(), MAIN: rp_file(), "hold": profile_hold()}, "limits": limits(), "page_ver": int(os.path.getmtime(os.path.join(HERE, "index.html"))), "emergencies": [e for e in EMERGENCIES if e.get("end") is None or time.time() - e["end"] < 86400]}
+                     "laptop": laptop_view(), "health": state.get("health", {}), "lapjobs": state.get("lapjobs", {}), "env_live": list(env["live"]), "gpu_live": list(gpu_live["pts"]), f"{BOX}_gpu_live": list(box_gpu_live["pts"]), "laptop_gpu_live": list(laptop_gpu_live["pts"]), "tasks": tasks_list(time.time()), "offsite": OFFSITE["now"], "job_locks": job_status(job_locks(), tasks_list(time.time()), None, carve_progress()), "carve_progress": carve_progress(), "lapcheck": {"at": LAPCHECK["at"], "rows": LAPCHECK["rows"]}, "sel": state.get("sel"), "carve": carve_view(), "meeting": meeting_desired(), "gpu_switch": gpu_desired(), "dismissed": dismissed(), "quickcool": qc_desired(), "runprofile": {"desired": rp_desired(), MAIN: rp_file(), "hold": profile_hold()}, "limits": limits(), "page_ver": int(os.path.getmtime(os.path.join(HERE, "index.html"))), "emergencies": [e for e in EMERGENCIES if e.get("end") is None or time.time() - e["end"] < 86400]}
             s["claude"] = claude_status()
             self.send(200, json.dumps(s, default=str), "application/json")
         elif self.path.startswith("/api/powertarget"):   # published per-mode power target jobs scale to (2026-09-28)

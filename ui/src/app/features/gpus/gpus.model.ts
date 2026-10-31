@@ -15,49 +15,130 @@ export interface GpuCtx {
   ioh: any;
 }
 
+/** How one live-only GPU card differs from the other (the intake box's GPU and the laptop's). */
+interface LiveGpu {
+  id: string; // chart id prefix
+  title: string;
+  where: string; // "in <machine>"
+  every: number; // seconds between readings
+  temp: [number, number]; // yellow, red
+  fan: boolean; // the driver reports the card fan (a laptop GPU doesn't)
+  noCap: string; // KPI sub when the driver reports no power cap
+  watts: [number, number]; // power chart top, step
+  vram: [number, number]; // memory chart top, step
+}
+
 /** Big GPU in the intake box, from its agent; live only: the main server keeps the last 2 h in memory (5 s points). */
 export function boxGpuView(s: any, ctx: GpuCtx) {
   const tv = s[SITE.box] || {},
-    g = (tv.fast || {}).gpu,
-    live = !!(tv.ok && g),
-    range = ctx.range,
+    g = (tv.fast || {}).gpu;
+  const spec: LiveGpu = {
+    id: 'tgpu',
+    title: SITE.boxGpu,
+    where: SITE.Box,
+    every: 5,
+    temp: [83, 88], // AD102 slows down near 87-90°C
+    fan: true,
+    noCap: 'cap ? W',
+    watts: [450, 75],
+    vram: [24e9, 4e9],
+  };
+  return liveGpuView(
+    spec,
+    g,
+    !!(tv.ok && g),
+    s[`${SITE.box}_gpu_live`],
+    s,
+    ctx,
+    tv.error || '',
+    tv.ok
+      ? t("{Box}'s agent reports no GPU (driver not loaded? check gpu-init on {Box})")
+      : t('{Box} is not answering (powered off, moving, or off the network)'),
+  );
+}
+
+/** The laptop's GPU (a GPU worker since 2026-10-31), from the laptop agent's push; live only, like the intake box's. */
+export function laptopGpuView(s: any, ctx: GpuCtx) {
+  const lv = s.laptop || {},
+    g = (lv.fast || {}).gpu,
+    fresh = !!lv.at && s.now - lv.at < 30;
+  const spec: LiveGpu = {
+    id: 'lgpu',
+    title: g?.name ? String(g.name).replace(/^NVIDIA (GeForce )?/, '') : 'Laptop GPU',
+    where: 'the laptop',
+    every: 15,
+    temp: [80, 87], // laptop parts throttle near 87°C
+    fan: false,
+    noCap: 'no cap reported (laptop)',
+    watts: [120, 20],
+    vram: [10e9, 2e9],
+  };
+  return liveGpuView(
+    spec,
+    g,
+    fresh && !!g,
+    s.laptop_gpu_live,
+    s,
+    ctx,
+    '',
+    fresh
+      ? "the laptop agent reports no GPU (nvidia-smi didn't answer)"
+      : 'the laptop is not reporting (asleep, off the network, or its agent stopped)',
+  );
+}
+
+function liveGpuView(
+  spec: LiveGpu,
+  g: any,
+  live: boolean,
+  feed: any[] | undefined,
+  s: any,
+  ctx: GpuCtx,
+  err: string,
+  offline: string,
+) {
+  const range = ctx.range,
     RL = ctx.rangeLabel;
-  const src = '· live, every 5 s' + (range > 7200 ? ' (only the last 2 h are kept)' : '');
+  const src =
+    `· live, every ${spec.every} s` + (range > 7200 ? ' (only the last 2 h are kept)' : '');
+  const head = { title: spec.title, where: spec.where, src };
   if (!live)
     return {
+      ...head,
       live,
       hot: false,
-      src,
       pcie: 0,
       pcieMax: 0,
-      err: tv.error || '',
+      err,
       kpis: [] as Kpi[],
       charts: [],
-      offline: tv.ok
-        ? t("{Box}'s agent reports no GPU (driver not loaded? check gpu-init on {Box})")
-        : t('{Box} is not answering (powered off, moving, or off the network)'),
+      offline,
     };
-  const [w, b] = [83, 88],
-    cls = g.temp >= b ? 'bad' : g.temp >= w ? 'warn' : ''; // AD102 slows down near 87-90°C
+  const [w, b] = spec.temp,
+    cls = g.temp >= b ? 'bad' : g.temp >= w ? 'warn' : '';
   const kpis: Kpi[] = [
-    // same five stats as the RTX 2080 Ti card
+    // same stats as the RTX 2080 Ti card
     { l: 'Temp', v: g.temp.toFixed(0) + '°C', sub: `yellow ${w} · red ${b}`, c: cls },
     {
       l: 'Power',
       v: g.power_w != null ? Math.round(g.power_w) + ' W' : '—',
-      sub: `cap ${g.power_limit_w != null ? Math.round(g.power_limit_w) : '?'} W`,
+      sub: g.power_limit_w != null ? `cap ${Math.round(g.power_limit_w)} W` : spec.noCap,
     },
     { l: 'Load', v: g.util.toFixed(0) + '%', sub: 'GPU busy' },
-    {
-      l: 'Card fan',
-      v: g.fan_pct != null ? g.fan_pct.toFixed(0) + '%' : '—',
-      sub: g.fan_rpm
-        ? `actual ${num(Math.round(g.fan_rpm))} rpm (nvidia, auto)`
-        : 'stopped · fans off below ~55°C (nvidia, auto)',
-    },
+    ...(spec.fan
+      ? [
+          {
+            l: 'Card fan',
+            v: g.fan_pct != null ? g.fan_pct.toFixed(0) + '%' : '—',
+            sub: g.fan_rpm
+              ? `actual ${num(Math.round(g.fan_rpm))} rpm (nvidia, auto)`
+              : 'stopped · fans off below ~55°C (nvidia, auto)',
+          },
+        ]
+      : []),
     { l: 'VRAM', v: fb(g.mem_used, 1), sub: `of ${fb(g.mem_total, 0)}` },
   ];
-  const pts: Point[] = (s[`${SITE.box}_gpu_live`] || [])
+  const pts: Point[] = (feed || [])
     .filter((p: any) => p.t >= s.now - range)
     .map((p: any) =>
       p.mem_bw != null && p.mem_total ? { ...p, mem_bw_scaled: (p.mem_bw / 100) * p.mem_total } : p,
@@ -81,8 +162,8 @@ export function boxGpuView(s: any, ctx: GpuCtx) {
       title: 'Power used vs cap',
       fmt: Wf,
       axis: (v) => (v ? Math.round(v) + ' W' : '0'),
-      yRange: [0, 450],
-      yStep: 75,
+      yRange: [0, spec.watts[0]],
+      yStep: spec.watts[1],
       series: [
         ['draw', 'used', false],
         ['cap', 'cap', true],
@@ -94,8 +175,8 @@ export function boxGpuView(s: any, ctx: GpuCtx) {
       title: 'Memory (VRAM)',
       fmt: Gf,
       axis: (v) => (v ? (v / 1e9).toFixed(0) + ' GB' : '0'),
-      yRange: [0, 24e9],
-      yStep: 4e9,
+      yRange: [0, spec.vram[0]],
+      yStep: spec.vram[1],
       series: [
         ['mem', 'used', false],
         ['mem_total', 'total', true],
@@ -115,10 +196,10 @@ export function boxGpuView(s: any, ctx: GpuCtx) {
       .map(([k, l, d]) => ({ sw: keyStyle('--s2', d), name: l, val: c.fmt(now[k]) }) as LegendItem)
       .concat(c.extra),
     opts: {
-      id: 'tgpu-' + c.id,
+      id: `${spec.id}-${c.id}`,
       points: pts,
       range_s: range,
-      bucket_s: 5,
+      bucket_s: spec.every,
       height: 170,
       left: 50,
       right: 70,
@@ -127,7 +208,7 @@ export function boxGpuView(s: any, ctx: GpuCtx) {
       yRange: c.yRange,
       yStep: c.yStep,
       empty: 'no readings yet (collecting since the dashboard started)',
-      label: t(`{boxGpu} ${c.id}, last ${RL}`),
+      label: `${spec.title} ${c.id}, last ${RL}`,
       series: c.series.map(([k, l, d]) => ({
         k,
         label: l,
@@ -138,9 +219,9 @@ export function boxGpuView(s: any, ctx: GpuCtx) {
     } as LineOpts,
   }));
   return {
+    ...head,
     live,
     hot: cls === 'bad',
-    src,
     pcie: g.pcie_width || 0,
     pcieMax: g.pcie_width_max && g.pcie_width < g.pcie_width_max ? g.pcie_width_max : 0,
     err: '',
@@ -149,7 +230,7 @@ export function boxGpuView(s: any, ctx: GpuCtx) {
     offline: '',
   };
 }
-export type BoxGpuView = ReturnType<typeof boxGpuView>;
+export type BoxGpuView = ReturnType<typeof liveGpuView>;
 
 /** The GPU node's card: KPIs, power (with output tokens/s) and memory charts, and one chart per GPU job feed. */
 export function nodeGpuView(s: any, ctx: GpuCtx) {

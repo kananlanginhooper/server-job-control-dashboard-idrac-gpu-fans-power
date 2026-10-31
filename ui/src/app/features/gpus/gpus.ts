@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DashboardStore } from '../../core/dashboard.store';
-import { GpuCtx, boxGpuView, nodeGpuView } from './gpus.model';
+import { GpuCtx, boxGpuView, laptopGpuView, nodeGpuView } from './gpus.model';
 import { BoxGpuCard } from './box-gpu-card';
 import { NodeGpuCard } from './node-gpu-card';
 
-/** "GPUs now": GPU cards above the server cards, the intake box's GPU first, then the GPU node's. */
+/** "GPUs now": GPU cards above the server cards, the intake box's GPU first, then the GPU node's, then the laptop's. */
 @Component({
   selector: '[app-gpus]',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,6 +16,9 @@ import { NodeGpuCard } from './node-gpu-card';
       }
       @if (node(); as n) {
         <app-node-gpu-card [v]="n" />
+      }
+      @if (laptop(); as l) {
+        <app-box-gpu-card [v]="l" />
       }
     </div>`,
 })
@@ -36,5 +39,9 @@ export class Gpus {
   protected readonly node = computed(() => {
     const s = this.store.state();
     return s ? nodeGpuView(s, this.ctx()) : null;
+  });
+  protected readonly laptop = computed(() => {
+    const s = this.store.state();
+    return s ? laptopGpuView(s, this.ctx()) : null;
   });
 }
