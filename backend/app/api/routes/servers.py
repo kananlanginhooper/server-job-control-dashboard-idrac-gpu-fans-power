@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
+from ...core.config import Settings, get_settings
+from ...services import env_history
 from ...schemas.servers import (
     PARTS,
     CommandResult,
@@ -37,6 +39,25 @@ def all_servers(h: MqttHub = Depends(hub)):
 def gpu_live(since: float = 0, h: MqttHub = Depends(hub)):
     """Each host's GPU readings newer than `since` (Unix s), ~5 s apart, the last 2 h; the live GPU charts poll this."""
     return h.gpu_live(since)
+
+
+@router.get("/api/v1/env-history", dependencies=[Depends(lan_only)])
+async def env_hist(
+    req: Request,
+    range: int = Query(3600, ge=60, le=31 * 86400),
+    since: float = 0,
+    h: MqttHub = Depends(hub),
+    s: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """The environment and total-power charts' points over `range` s: the metrics recorder's stored buckets, with the
+    live MQTT points (~5 s, last 2 h) laid over them. {bucket_s, stored, points: [{t, power_<host>, ...}]}
+    With `since`: only the live points newer than it (the page's 5-s top-up; no recorder call)."""
+    live = list(h.env_live.pts)
+    if since:
+        return {"bucket_s": 5, "stored": 0, "points": [p for p in live if p["t"] > since]}
+    if not s.recorder_url:
+        return {"bucket_s": 5, "stored": 0, "points": [p for p in live if p["t"] >= live[-1]["t"] - range] if live else []}
+    return await env_history.history(req.app.state.http, s.recorder_url.rstrip("/"), h.hosts, range, live)
 
 
 @router.get("/api/v1/servers/{host}", response_model=ServerView, dependencies=[Depends(lan_only)])

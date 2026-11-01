@@ -27,7 +27,7 @@ export class FanControls {
     return s
       ? chartsView(
           s,
-          this.store.series(),
+          this.store.envHist(),
           this.store.guard(),
           this.store.range(),
           this.store.rangeLabel(),

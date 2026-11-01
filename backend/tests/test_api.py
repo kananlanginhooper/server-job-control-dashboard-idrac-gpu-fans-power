@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import time
 
+import httpx
 import pytest
 from app.core.config import get_settings
 from app.main import create_app
+from app.services import env_history
 from fastapi.testclient import TestClient
 
 
@@ -65,6 +69,20 @@ def test_gpu_live_keeps_one_reading_per_5_s_and_answers_since(client):
     assert client.get("/api/v1/servers").json()["servers"]["laptop"]["sensors"]["at"] == 1010
 
 
+def test_env_live_points_use_the_hubs_rules(client):
+    a = client.get("/api/config").json()["site"]["main"]
+    publish(client.hub, a, "status", "online")
+    publish(client.hub, a, "idrac", {"fans": [{"rpm": 4000}, {"rpm": 4400}], "temps": [{"name": "Inlet", "c": 99}, {"name": "Exhaust", "c": 41}],
+                                     "psu": {"ps1": {"v": 118}, "ps2": {"v": None}}})
+    publish(client.hub, a, "sensors", {"temps": [{"chip": "coretemp", "label": "Package id 0", "c": 60}, {"chip": "nic", "label": "MAC", "c": 77},
+                                                 {"chip": "nvme", "label": "Composite", "c": 52}]})
+    publish(client.hub, a, "power", {"w": 300, "peak_5s": 320})  # the main server's power report takes the sample
+    p = client.get("/api/v1/env-history?range=600").json()["points"][-1]
+    # hottest: Inlet and the NIC sensor don't count; peak_5s is the power; one PSU without a reading
+    assert p[f"temp_{a}"] == 60 and p[f"power_{a}"] == 320 and p[f"fan_{a}"] == 4400
+    assert p[f"volt_{a}_ps1"] == 118 and f"volt_{a}_ps2" not in p
+
+
 def test_fan_command_validation_and_unknown_host(client):
     assert client.post("/api/v1/servers/server-a/fans", json={}).status_code == 422  # neither pct nor auto
     assert client.post("/api/v1/servers/server-a/fans", json={"pct": 150}).status_code == 422
@@ -116,3 +134,26 @@ def test_data_is_home_lan_only_and_router_excluded(client, monkeypatch):
 
 def test_legacy_forward_off_when_unset(client):
     assert client.get("/api/state").status_code == 404
+
+
+def test_env_history_stored_minutes_then_live_points():
+    now = time.time()
+    t0 = int(now // 60) * 60 - 120  # three stored minutes, the last one still filling
+
+    def recorder(req: httpx.Request) -> httpx.Response:
+        if req.url.params["metric"] != "power_peak_w" or req.url.params["host"] != "a":
+            return httpx.Response(404)
+        return httpx.Response(200, json={"bucket_s": 60, "points": [[t0, 500], [t0 + 60, 510], [t0 + 120, 400]]})
+
+    live = [{"t": t0 + 100, "power_a": 505}, {"t": t0 + 125, "power_a": 520}, {"t": t0 + 130, "power_a": 530}]
+    h = {"main": "a", "node": "b", "box": "c", "laptop": "laptop"}
+
+    async def go(range_s):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(recorder)) as c:
+            return await env_history.history(c, "http://rec", h, range_s, live)
+
+    # up to 2 h: the live points replace the stored minutes from where they start (t0+100)
+    r = asyncio.run(go(3600))
+    assert r["bucket_s"] == 60 and [p["power_a"] for p in r["points"]] == [500, 510, 505, 520, 530]
+    # longer: stored buckets, and live points only from the newest (still filling) bucket on
+    assert [p["power_a"] for p in asyncio.run(go(86400))["points"]] == [500, 510, 520, 530]

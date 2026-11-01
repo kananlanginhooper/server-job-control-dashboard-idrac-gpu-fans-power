@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # data and controls only from these address prefixes (home LAN), minus the excluded addresses (the router)
     control_nets: str = Field("127.,10.", validation_alias="SJC_CONTROL_NETS")
     control_exclude: str = Field("", validation_alias="SJC_CONTROL_EXCLUDE")
+    # metrics recorder (services repo: services/metrics-recorder): the stored history the long-range charts draw
+    recorder_url: str = Field("", validation_alias="SJC_RECORDER_URL")
     # private site file: this installation's machine names and descriptions
     site_file: str = Field("", validation_alias="SJC_SITE_FILE")
     # group standard (DEV-STANDARD section 5)

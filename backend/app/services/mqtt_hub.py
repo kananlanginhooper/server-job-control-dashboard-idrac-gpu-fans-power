@@ -13,6 +13,8 @@ import paho.mqtt.client as mqtt
 
 from ..core.config import Settings
 from ..schemas.servers import PARTS
+from .env_history import EnvLive, hosts
+from .site import load_site
 
 GPU_EVERY, GPU_KEEP = 4.5, 1600  # ~5 s apart (agents publish every 2-5 s), 2 h
 
@@ -28,6 +30,8 @@ class MqttHub:
         self.s = settings
         self.servers: dict[str, dict] = {}  # host -> part -> payload (+ "_at": part -> receive time)
         self.gpu_hist: dict[str, deque] = {}  # host -> GPU readings, ~GPU_EVERY s apart, the last GPU_KEEP
+        self.hosts = hosts(load_site(settings.site_file))  # role -> host name (main, node, box, laptop)
+        self.env_live = EnvLive()  # the environment charts' live points, last 2 h
         self.connected, self.since = False, None
         self._waiters: dict[str, tuple[threading.Event, dict]] = {}
         self._client: mqtt.Client | None = None
@@ -77,6 +81,8 @@ class MqttHub:
         s[part], s["_at"][part] = val, time.time()
         if part == "gpu":
             self._keep_gpu(host, val)
+        if part == "power" and host == self.hosts["main"]:  # every ~5 s
+            self.env_live.sample(self.servers, self.hosts, time.time())
 
     def _keep_gpu(self, host: str, val: dict) -> None:
         """MQTT keeps only the latest value, so the live GPU charts' 2 h come from here (the first card per host)."""

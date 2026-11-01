@@ -24,6 +24,7 @@ export class DashboardStore {
   readonly guard = signal<any>({ points: [], events: [] });
   readonly mq = signal<any>({}); // /api/v1/servers: host -> the parts its agent publishes over MQTT (system, gpu, ...)
   readonly gpuLive = signal<Record<string, any[]>>({}); // /api/v1/gpu-live: host -> GPU readings, last 2 h
+  readonly envHist = signal<any>(null); // /api/v1/env-history: power / temp / fan / volt points for the range
   readonly range = signal(3600);
   readonly rangeLabel = computed(() => RLABEL[this.range()] || '');
   readonly limits = computed(() => new Limits(this.state()?.limits));
@@ -45,6 +46,7 @@ export class DashboardStore {
     const timers = [
       setInterval(() => this.tick(), 5000),
       setInterval(() => this.loadSeries(), 60000),
+      setInterval(() => this.loadEnv(), 60000),
       setTimeout(() => this.loadIO(), 2000),
       setInterval(() => this.loadIO(), 30000),
       setTimeout(() => this.loadTH(), 1500),
@@ -55,6 +57,7 @@ export class DashboardStore {
     inject(DestroyRef).onDestroy(() => timers.forEach((t) => clearTimeout(t))); // the wrapper unmounts modules it switches away from
     this.tick();
     this.loadSeries();
+    this.loadEnv();
   }
 
   /** GET as text and parse here: app.py's json.dumps can emit bare Infinity / NaN (e.g. an ETA at rate 0, 2026-10-05),
@@ -104,6 +107,27 @@ export class DashboardStore {
     } catch {
       /* keep last */
     }
+    const eh = this.envHist(),
+      r = this.range();
+    if (eh?.points?.length)
+      try {
+        // the live points since the last one: the charts gain a ~5-s point between the full reloads
+        const d = await this.get<any>(`/api/v1/env-history?since=${eh.points.at(-1).t}`);
+        if (d.points?.length && this.envHist() === eh && r === this.range())
+          this.envHist.set({ ...eh, points: [...eh.points, ...d.points] });
+      } catch {
+        /* keep last */
+      }
+  }
+  /** The environment and total-power charts' points for the range: stored (recorder) + live (MQTT); every 60 s. */
+  async loadEnv() {
+    const r = this.range();
+    try {
+      const d = await this.get<any>(`/api/v1/env-history?range=${r}`);
+      if (r === this.range()) this.envHist.set(d);
+    } catch {
+      /* keep last */
+    }
   }
   async loadSeries() {
     const r = this.range();
@@ -140,12 +164,14 @@ export class DashboardStore {
     this.range.set(r);
     showRange(r);
     this.series.set(null);
+    this.envHist.set(null);
     try {
       localStorage.setItem(lsKey('graphRange'), String(r));
     } catch {
       /* storage blocked */
     }
     this.loadSeries();
+    this.loadEnv();
   }
 
   private patch(p: any) {

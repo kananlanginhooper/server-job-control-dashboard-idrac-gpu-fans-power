@@ -249,8 +249,8 @@ export type HostStatus = ControlsView['st730'];
 export type RunProfileButton = ControlsView['rpButtons'][number];
 
 /** The three charts under the controls: total power vs the line, power-scaler caps, PSU voltage (Low Power). */
-export function chartsView(s: any, series: any, guard: any, range: number, RL: string) {
-  const env = envData(s, series, range),
+export function chartsView(s: any, envHist: any, guard: any, range: number, RL: string) {
+  const env = envData(envHist, range),
     // + the laptop (a GPU worker since 2026-10-31): servers + laptop, its own line so the servers' Total stays
     // what the power guard holds to the line (the laptop's figure is CPU package + GPU, or battery draw when unplugged)
     tp = withTotals(env.pts).map((p) =>

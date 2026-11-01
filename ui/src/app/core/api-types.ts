@@ -82,6 +82,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/env-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Env Hist
+         * @description The environment and total-power charts' points over `range` s: the metrics recorder's stored buckets, with the
+         *     live MQTT points (~5 s, last 2 h) laid over them. {bucket_s, stored, points: [{t, power_<host>, ...}]}
+         *     With `since`: only the live points newer than it (the page's 5-s top-up; no recorder call).
+         */
+        get: operations["env_hist_api_v1_env_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/servers/{host}": {
         parameters: {
             query?: never;
@@ -486,6 +508,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GpuLive"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    env_hist_api_v1_env_history_get: {
+        parameters: {
+            query?: {
+                range?: number;
+                since?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

@@ -121,7 +121,7 @@ export class Env {
     if (!s) return null;
     const range = this.store.range(),
       RL = this.store.rangeLabel(),
-      env = envData(s, this.store.series(), range),
+      env = envData(this.store.envHist(), range),
       envPts = env.pts,
       envNow = env.now;
     const Wf = (v: any) => (v == null ? '—' : Math.round(v) + ' W'),

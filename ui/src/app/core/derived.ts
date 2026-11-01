@@ -10,22 +10,23 @@ export interface EnvData {
   bucket: number;
 }
 
-/** env points for the view: live 5-s samples for 10m (or when no stored series yet), else /api/series env buckets.
+/** env points for the view, from this app's /api/v1/env-history (2026-11-01): the metrics recorder's stored buckets
+ *  with the live MQTT points (~5 s) over them, topped up every 5 s. Same keys as the hub's old env series.
  *  The GPU node line is plotted without the GPU (noGpu); total = main server + GPU node + GPU = both iDRAC readings. */
-export function envData(s: any, ser: any, range: number): EnvData {
-  const envLive: Point[] = s.env_live || [];
-  const liveMode = range <= 600 || !(ser && ser.env && (ser.env.points || []).length > 1);
+export function envData(eh: any, range: number): EnvData {
+  const all: Point[] = eh?.points || [];
   const noGpu = (p: any) => {
     const n = `power_${SITE.node}`,
       g = n + '_gpu';
     return p[n] != null && p[g] != null ? { ...p, [n]: Math.max(0, p[n] - p[g]) } : p;
   };
-  const pts = (liveMode ? envLive.filter((p) => p.t >= s.now - range) : ser.env.points).map(noGpu);
+  const from = Date.now() / 1000 - range,
+    pts = all.filter((p) => p.t >= from).map(noGpu);
   return {
-    liveMode,
+    liveMode: !eh?.stored,
     pts,
-    now: envLive.length ? noGpu(envLive[envLive.length - 1]) : {},
-    bucket: liveMode ? 5 : ser.env.bucket_s || 60,
+    now: pts.length ? pts[pts.length - 1] : {},
+    bucket: eh?.bucket_s || 60,
   };
 }
 
