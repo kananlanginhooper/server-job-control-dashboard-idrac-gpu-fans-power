@@ -152,8 +152,8 @@ export interface ServersCtx {
 
 /**
  * A server's MQTT report (sjc/<host>/system, sensors, power, idrac, gpu, safety) in the shape the cards read, for what
- * MQTT carries. It's laid over the hub's data, which still supplies the rest (disk-wait counts, drive temperatures, the
- * desktop's CPU package power) and every chart's history.
+ * MQTT carries. It's laid over the hub's data, which still supplies the rest (the "stuck" list, which needs the hub's
+ * age rule; drive temperatures) and every chart's history.
  */
 export function mqFast(v: any): any {
   if (v?.status !== 'online') return {};
@@ -175,6 +175,9 @@ export function mqFast(v: any): any {
       },
     });
     if (sy.load) out.load = sy.load;
+    if (sy.dstate) out.dstate = sy.dstate.count; // processes in disk wait (D state) right now
+    // RAPL per CPU package; {} on the agent's first sample after a restart
+    if (sy.cpu_pkg_w && Object.keys(sy.cpu_pkg_w).length) out.power_watch = { pkg_w: sy.cpu_pkg_w };
   }
   const ts: any[] = v.sensors?.temps || [];
   if (ts.length) {
