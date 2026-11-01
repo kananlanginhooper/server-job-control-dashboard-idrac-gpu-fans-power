@@ -13,6 +13,16 @@ export interface GpuCtx {
   limits: Limits;
   series: any;
   ioh: any;
+  mq: any; // /api/v1/servers: host -> its MQTT parts
+  gpuLive: Record<string, any[]>; // /api/v1/gpu-live: host -> readings, last 2 h
+}
+
+/** A host's first GPU card from its MQTT report (sjc/<host>/gpu), when the agent is online and the report is fresh. */
+export function mqGpu(mq: any, host: string): any {
+  const v = mq?.[host];
+  return v?.status === 'online' && (v.age_s?.gpu ?? Infinity) < 30
+    ? (v.gpu?.cards?.[0] ?? null)
+    : null;
 }
 
 /** How one live-only GPU card differs from the other (the intake box's GPU and the laptop's). */
@@ -28,10 +38,10 @@ interface LiveGpu {
   vram: [number, number]; // memory chart top, step
 }
 
-/** Big GPU in the intake box, from its agent; live only: the main server keeps the last 2 h in memory (5 s points). */
+/** Big GPU in the intake box, from its MQTT report; live only: this app's back end keeps the last 2 h (5 s points). */
 export function boxGpuView(s: any, ctx: GpuCtx) {
-  const tv = s[SITE.box] || {},
-    g = (tv.fast || {}).gpu;
+  const g = mqGpu(ctx.mq, SITE.box),
+    online = ctx.mq?.[SITE.box]?.status === 'online';
   const spec: LiveGpu = {
     id: 'tgpu',
     title: SITE.boxGpu,
@@ -46,27 +56,26 @@ export function boxGpuView(s: any, ctx: GpuCtx) {
   return liveGpuView(
     spec,
     g,
-    !!(tv.ok && g),
-    s[`${SITE.box}_gpu_live`],
+    !!g,
+    ctx.gpuLive[SITE.box],
     s,
     ctx,
-    tv.error || '',
-    tv.ok
+    '',
+    online
       ? t("{Box}'s agent reports no GPU (driver not loaded? check gpu-init on {Box})")
       : t('{Box} is not answering (powered off, moving, or off the network)'),
   );
 }
 
-/** The laptop's GPU (a GPU worker since 2026-10-31), from the laptop agent's push; live only, like the intake box's. */
+/** The laptop's GPU (a GPU worker since 2026-10-31), from its MQTT report; live only, like the intake box's. */
 export function laptopGpuView(s: any, ctx: GpuCtx) {
-  const lv = s.laptop || {},
-    g = (lv.fast || {}).gpu,
-    fresh = !!lv.at && s.now - lv.at < 30;
+  const g = mqGpu(ctx.mq, 'laptop'),
+    online = ctx.mq?.laptop?.status === 'online';
   const spec: LiveGpu = {
     id: 'lgpu',
     title: g?.name ? String(g.name).replace(/^NVIDIA (GeForce )?/, '') : 'Laptop GPU',
     where: 'the laptop',
-    every: 15,
+    every: 5,
     temp: [80, 87], // laptop parts throttle near 87°C
     fan: false,
     noCap: 'no cap reported (laptop)',
@@ -76,12 +85,12 @@ export function laptopGpuView(s: any, ctx: GpuCtx) {
   return liveGpuView(
     spec,
     g,
-    fresh && !!g,
-    s.laptop_gpu_live,
+    !!g,
+    ctx.gpuLive.laptop,
     s,
     ctx,
     '',
-    fresh
+    online
       ? "the laptop agent reports no GPU (nvidia-smi didn't answer)"
       : 'the laptop is not reporting (asleep, off the network, or its agent stopped)',
   );
@@ -132,7 +141,9 @@ function liveGpuView(
             v: g.fan_pct != null ? g.fan_pct.toFixed(0) + '%' : '—',
             sub: g.fan_rpm
               ? `actual ${num(Math.round(g.fan_rpm))} rpm (nvidia, auto)`
-              : 'stopped · fans off below ~55°C (nvidia, auto)',
+              : g.fan_pct
+                ? 'nvidia, auto'
+                : 'stopped · fans off below ~55°C (nvidia, auto)',
           },
         ]
       : []),
@@ -235,7 +246,9 @@ export type BoxGpuView = ReturnType<typeof liveGpuView>;
 /** The GPU node's card: KPIs, power (with output tokens/s) and memory charts, and one chart per GPU job feed. */
 export function nodeGpuView(s: any, ctx: GpuCtx) {
   const R = (s.remote || {}).fast || {},
-    g = R.gpu,
+    m = mqGpu(ctx.mq, SITE.node),
+    // the MQTT report's readings over the hub's; the hub adds what MQTT doesn't carry (the measured card fan rpm)
+    g = R.gpu || m ? { ...R.gpu, ...m } : null,
     fg = (R.fan_control || {}).gpu || {};
   if (!g) return null;
   const L = ctx.limits,

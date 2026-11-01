@@ -7,11 +7,14 @@ import json
 import threading
 import time
 import uuid
+from collections import deque
 
 import paho.mqtt.client as mqtt
 
 from ..core.config import Settings
 from ..schemas.servers import PARTS
+
+GPU_EVERY, GPU_KEEP = 4.5, 1600  # ~5 s apart (agents publish every 2-5 s), 2 h
 
 
 class CommandError(Exception):
@@ -24,6 +27,7 @@ class MqttHub:
     def __init__(self, settings: Settings):
         self.s = settings
         self.servers: dict[str, dict] = {}  # host -> part -> payload (+ "_at": part -> receive time)
+        self.gpu_hist: dict[str, deque] = {}  # host -> GPU readings, ~GPU_EVERY s apart, the last GPU_KEEP
         self.connected, self.since = False, None
         self._waiters: dict[str, tuple[threading.Event, dict]] = {}
         self._client: mqtt.Client | None = None
@@ -71,6 +75,24 @@ class MqttHub:
             return
         s = self.servers.setdefault(host, {"_at": {}})
         s[part], s["_at"][part] = val, time.time()
+        if part == "gpu":
+            self._keep_gpu(host, val)
+
+    def _keep_gpu(self, host: str, val: dict) -> None:
+        """MQTT keeps only the latest value, so the live GPU charts' 2 h come from here (the first card per host)."""
+        cards = (val or {}).get("cards") or []
+        t = (val or {}).get("at")
+        if not cards or not t:
+            return
+        h = self.gpu_hist.setdefault(host, deque(maxlen=GPU_KEEP))
+        if h and t - h[-1]["t"] < GPU_EVERY:
+            return
+        g = cards[0]
+        h.append({"t": t, "temp": g.get("temp"), "draw": g.get("power_w"), "cap": g.get("power_limit_w"), "util": g.get("util"),
+                  "mem": g.get("mem_used"), "mem_total": g.get("mem_total"), "mem_bw": g.get("mem_util")})
+
+    def gpu_live(self, since: float = 0) -> dict:
+        return {"at": time.time(), "hosts": {h: [p for p in d if p["t"] > since] for h, d in sorted(self.gpu_hist.items())}}
 
     # --- views --------------------------------------------------------------------------------------------------------
     def view(self, host: str) -> dict | None:

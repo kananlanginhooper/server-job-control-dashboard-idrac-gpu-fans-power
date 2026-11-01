@@ -8,7 +8,8 @@ import { rangeFromUrl, showRange } from './deep-link';
 
 /**
  * All live data for the page, polled from the same app.py endpoints the original page uses:
- * /api/state every 5 s, /api/series?range= every 60 s, /api/iohist + /api/temphist every 30 s, /api/guardhist every 60 s.
+ * /api/state every 5 s, /api/series?range= every 60 s, /api/iohist + /api/temphist every 30 s, /api/guardhist every 60 s;
+ * plus this app's own back end, every 5 s: /api/v1/servers (each server's MQTT reports) and /api/v1/gpu-live.
  * Control POSTs (run profile, Quick Cool, Meeting Mode, GPU switch, dismiss) update the state optimistically, like the original.
  */
 @Injectable({ providedIn: 'root' })
@@ -21,6 +22,8 @@ export class DashboardStore {
   readonly ioh = signal<any>(null); // /api/iohist
   readonly th = signal<any>(null); // /api/temphist
   readonly guard = signal<any>({ points: [], events: [] });
+  readonly mq = signal<any>({}); // /api/v1/servers: host -> the parts its agent publishes over MQTT (system, gpu, ...)
+  readonly gpuLive = signal<Record<string, any[]>>({}); // /api/v1/gpu-live: host -> GPU readings, last 2 h
   readonly range = signal(3600);
   readonly rangeLabel = computed(() => RLABEL[this.range()] || '');
   readonly limits = computed(() => new Limits(this.state()?.limits));
@@ -71,11 +74,35 @@ export class DashboardStore {
   }
 
   async tick() {
+    this.loadMqtt();
     try {
       this.state.set(await this.get('/api/state'));
       this.unreachable.set(false);
     } catch {
       this.unreachable.set(true);
+    }
+  }
+  /** The servers' own MQTT reports (via this app's back end), and the GPU readings since the last poll. */
+  async loadMqtt() {
+    try {
+      this.mq.set((await this.get<any>('/api/v1/servers')).servers || {});
+    } catch {
+      /* keep last */
+    }
+    try {
+      const old = this.gpuLive(),
+        last = (h: string) => old[h]?.at(-1)?.t ?? 0;
+      const since = Math.min(...Object.keys(old).map(last), Infinity);
+      const d = await this.get<any>(`/api/v1/gpu-live?since=${isFinite(since) ? since : 0}`);
+      const keep = d.at - 7200,
+        out: Record<string, any[]> = {};
+      for (const [h, pts] of Object.entries<any[]>(d.hosts || {}))
+        out[h] = [...(old[h] || []), ...pts.filter((p) => p.t > last(h))].filter(
+          (p) => p.t >= keep,
+        );
+      this.gpuLive.set(out);
+    } catch {
+      /* keep last */
     }
   }
   async loadSeries() {

@@ -50,9 +50,30 @@ export interface paths {
         };
         /**
          * All Servers
-         * @description Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system).
+         * @description Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system, sensors, disks,
+         *     drive health).
          */
         get: operations["all_servers_api_v1_servers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gpu-live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gpu Live
+         * @description Each host's GPU readings newer than `since` (Unix s), ~5 s apart, the last 2 h; the live GPU charts poll this.
+         */
+        get: operations["gpu_live_api_v1_gpu_live_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -166,7 +187,9 @@ export interface components {
              * Site
              * @description machine names, roles and notes (private site file); empty = generic names
              */
-            site?: Record<string, unknown>;
+            site?: {
+                [key: string]: unknown;
+            };
         };
         /**
          * CommandResult
@@ -183,7 +206,9 @@ export interface components {
             at?: number | null;
             /** Error */
             error?: string | null;
-        } & Record<string, unknown>;
+        } & {
+            [key: string]: unknown;
+        };
         /**
          * FanCommand
          * @description Either a manual fan speed for every fan, or back to the iDRAC's automatic curve.
@@ -209,6 +234,52 @@ export interface components {
              * @default 0
              */
             index: number;
+        };
+        /** GpuLive */
+        GpuLive: {
+            /** At */
+            at: number;
+            /**
+             * Hosts
+             * @description host -> readings newer than ?since, oldest first (last 2 h kept)
+             */
+            hosts: {
+                [key: string]: components["schemas"]["GpuPoint"][];
+            };
+        };
+        /**
+         * GpuPoint
+         * @description One GPU reading in the live history (the first card of a host), at most one every ~5 s.
+         */
+        GpuPoint: {
+            /** T */
+            t: number;
+            /** Temp */
+            temp?: number | null;
+            /**
+             * Draw
+             * @description power used, W
+             */
+            draw?: number | null;
+            /**
+             * Cap
+             * @description power limit, W (none on a laptop GPU)
+             */
+            cap?: number | null;
+            /** Util */
+            util?: number | null;
+            /**
+             * Mem
+             * @description VRAM used, bytes
+             */
+            mem?: number | null;
+            /** Mem Total */
+            mem_total?: number | null;
+            /**
+             * Mem Bw
+             * @description memory bandwidth, % busy
+             */
+            mem_bw?: number | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -261,22 +332,48 @@ export interface components {
              */
             status?: string | null;
             /** Idrac */
-            idrac?: Record<string, unknown> | null;
+            idrac?: {
+                [key: string]: unknown;
+            } | null;
             /** Power */
-            power?: Record<string, unknown> | null;
+            power?: {
+                [key: string]: unknown;
+            } | null;
             /** Gpu */
-            gpu?: Record<string, unknown> | null;
+            gpu?: {
+                [key: string]: unknown;
+            } | null;
             /** Safety */
-            safety?: Record<string, unknown> | null;
+            safety?: {
+                [key: string]: unknown;
+            } | null;
             /** Runlevel */
-            runlevel?: Record<string, unknown> | null;
+            runlevel?: {
+                [key: string]: unknown;
+            } | null;
             /** System */
-            system?: Record<string, unknown> | null;
+            system?: {
+                [key: string]: unknown;
+            } | null;
+            /** Sensors */
+            sensors?: {
+                [key: string]: unknown;
+            } | null;
+            /** Disks */
+            disks?: {
+                [key: string]: unknown;
+            } | null;
+            /** Health */
+            health?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Age S
              * @description seconds since each part last arrived
              */
-            age_s?: Record<string, number>;
+            age_s?: {
+                [key: string]: number;
+            };
         };
         /** ServersResponse */
         ServersResponse: {
@@ -285,7 +382,9 @@ export interface components {
             /** Mqtt */
             mqtt: boolean;
             /** Servers */
-            servers: Record<string, components["schemas"]["ServerView"]>;
+            servers: {
+                [key: string]: components["schemas"]["ServerView"];
+            };
         };
         /** ValidationError */
         ValidationError: {
@@ -320,7 +419,9 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["AppConfig"];
                 };
@@ -338,7 +439,9 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["Health"];
                 };
@@ -356,9 +459,42 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["ServersResponse"];
+                };
+            };
+        };
+    };
+    gpu_live_api_v1_gpu_live_get: {
+        parameters: {
+            query?: {
+                since?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GpuLive"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -376,14 +512,18 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["ServerView"];
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
@@ -404,14 +544,18 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": unknown | null;
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
@@ -435,14 +579,18 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["CommandResult"];
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
@@ -466,14 +614,18 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["CommandResult"];
                 };
             };
             /** @description Validation Error */
             422: {
-                headers: Record<string, unknown>;
+                headers: {
+                    [name: string]: unknown;
+                };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };

@@ -9,6 +9,7 @@ from ...schemas.servers import (
     CommandResult,
     FanCommand,
     GpuLimitCommand,
+    GpuLive,
     Health,
     MqttState,
     ServersResponse,
@@ -27,8 +28,15 @@ def healthz(h: MqttHub = Depends(hub)) -> Health:
 
 @router.get("/api/v1/servers", response_model=ServersResponse, dependencies=[Depends(lan_only)])
 def all_servers(h: MqttHub = Depends(hub)):
-    """Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system)."""
+    """Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system, sensors, disks,
+    drive health)."""
     return h.all()
+
+
+@router.get("/api/v1/gpu-live", response_model=GpuLive, dependencies=[Depends(lan_only)])
+def gpu_live(since: float = 0, h: MqttHub = Depends(hub)):
+    """Each host's GPU readings newer than `since` (Unix s), ~5 s apart, the last 2 h; the live GPU charts poll this."""
+    return h.gpu_live(since)
 
 
 @router.get("/api/v1/servers/{host}", response_model=ServerView, dependencies=[Depends(lan_only)])

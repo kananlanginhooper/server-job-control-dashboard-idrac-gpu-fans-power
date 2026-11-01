@@ -54,7 +54,7 @@
           "servers"
         ],
         "summary": "All Servers",
-        "description": "Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system).",
+        "description": "Every server and every part its agent publishes (iDRAC, power, GPU, safety, run level, system, sensors, disks,\ndrive health).",
         "operationId": "all_servers_api_v1_servers_get",
         "responses": {
           "200": {
@@ -63,6 +63,50 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ServersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gpu-live": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "summary": "Gpu Live",
+        "description": "Each host's GPU readings newer than `since` (Unix s), ~5 s apart, the last 2 h; the live GPU charts poll this.",
+        "operationId": "gpu_live_api_v1_gpu_live_get",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "default": 0,
+              "title": "Since"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GpuLive"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -421,6 +465,126 @@
         ],
         "title": "GpuLimitCommand"
       },
+      "GpuLive": {
+        "properties": {
+          "at": {
+            "type": "number",
+            "title": "At"
+          },
+          "hosts": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/GpuPoint"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Hosts",
+            "description": "host -> readings newer than ?since, oldest first (last 2 h kept)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "hosts"
+        ],
+        "title": "GpuLive"
+      },
+      "GpuPoint": {
+        "properties": {
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "temp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp"
+          },
+          "draw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draw",
+            "description": "power used, W"
+          },
+          "cap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap",
+            "description": "power limit, W (none on a laptop GPU)"
+          },
+          "util": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Util"
+          },
+          "mem": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mem",
+            "description": "VRAM used, bytes"
+          },
+          "mem_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mem Total"
+          },
+          "mem_bw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mem Bw",
+            "description": "memory bandwidth, % busy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "t"
+        ],
+        "title": "GpuPoint",
+        "description": "One GPU reading in the live history (the first card of a host), at most one every ~5 s."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -591,6 +755,42 @@
               }
             ],
             "title": "System"
+          },
+          "sensors": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensors"
+          },
+          "disks": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disks"
+          },
+          "health": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health"
           },
           "age_s": {
             "additionalProperties": {

@@ -54,6 +54,17 @@ def test_servers_reflect_what_agents_publish(client):
     assert client.get("/healthz").json()["servers"] == ["server-a"]
 
 
+def test_gpu_live_keeps_one_reading_per_5_s_and_answers_since(client):
+    card = {"temp": 60, "util": 50, "mem_used": 4e9, "mem_total": 8e9, "power_w": 70, "power_limit_w": None, "mem_util": 20}
+    for t in (1000, 1002, 1005, 1010):  # 1002 is too soon after 1000: dropped
+        publish(client.hub, "laptop", "gpu", {"at": t, "cards": [card]})
+    publish(client.hub, "laptop", "sensors", {"at": 1010, "temps": [], "fans": []})  # a 1.1 part
+    r = client.get("/api/v1/gpu-live").json()["hosts"]["laptop"]
+    assert [p["t"] for p in r] == [1000, 1005, 1010] and r[0]["draw"] == 70 and r[0]["cap"] is None
+    assert [p["t"] for p in client.get("/api/v1/gpu-live?since=1005").json()["hosts"]["laptop"]] == [1010]
+    assert client.get("/api/v1/servers").json()["servers"]["laptop"]["sensors"]["at"] == 1010
+
+
 def test_fan_command_validation_and_unknown_host(client):
     assert client.post("/api/v1/servers/server-a/fans", json={}).status_code == 422  # neither pct nor auto
     assert client.post("/api/v1/servers/server-a/fans", json={"pct": 150}).status_code == 422

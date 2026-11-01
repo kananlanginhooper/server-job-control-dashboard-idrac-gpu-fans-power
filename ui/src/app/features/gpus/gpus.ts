@@ -30,6 +30,8 @@ export class Gpus {
     limits: this.store.limits(),
     series: this.store.series(),
     ioh: this.store.ioh(),
+    mq: this.store.mq(),
+    gpuLive: this.store.gpuLive(),
   }));
 
   protected readonly box = computed(() => {

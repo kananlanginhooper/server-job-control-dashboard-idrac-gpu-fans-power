@@ -147,6 +147,51 @@ export interface ServersCtx {
   range: number;
   th: any;
   ioh: any;
+  mq: any; // /api/v1/servers: host -> its MQTT parts
+}
+
+/**
+ * A server's MQTT report (sjc/<host>/system, sensors, power, idrac, gpu, safety) in the shape the cards read, for what
+ * MQTT carries. It's laid over the hub's data, which still supplies the rest (disk-wait counts, drive temperatures, the
+ * desktop's CPU package power) and every chart's history.
+ */
+export function mqFast(v: any): any {
+  if (v?.status !== 'online') return {};
+  const out: any = {},
+    sy = v.system;
+  if (sy) {
+    const io = Object.values<any>(sy.net_io || {}),
+      nics = Object.entries<any>(sy.nics || {}).filter(([, n]) => n.up && n.speed_mbit);
+    Object.assign(out, {
+      cpu: sy.cpu_pct / 100,
+      ncpu: sy.cpu_count,
+      uptime_s: sy.uptime_s,
+      mem: { total: sy.mem?.total, avail: sy.mem?.avail },
+      net: {
+        rx: io.reduce((a, n) => a + (n.rx_bps || 0), 0),
+        tx: io.reduce((a, n) => a + (n.tx_bps || 0), 0),
+        speed_mbit: Math.max(0, ...nics.map(([, n]) => n.speed_mbit)) || null,
+        nics: Object.fromEntries(nics.map(([k, n]) => [k, { speed_mbit: n.speed_mbit }])),
+      },
+    });
+    if (sy.load) out.load = sy.load;
+  }
+  const ts: any[] = v.sensors?.temps || [];
+  if (ts.length) {
+    const pick = (chip: string, label: RegExp) =>
+      ts.filter((x) => x.chip === chip && label.test(x.label || '')).map((x) => x.c);
+    out.temps = {
+      coretemp: pick('coretemp', /^Package/),
+      k10temp: pick('k10temp', /^Tctl$/),
+      nvme: pick('nvme', /^Composite$/),
+    };
+  }
+  if (v.power?.w != null) out.power = { w: v.power.w, max: v.power.max_60s, avg: v.power.avg_60s };
+  if (v.idrac) out.ipmi = v.idrac;
+  if (v.safety?.fan_control?.raid) out.fan_control = { raid: v.safety.fan_control.raid };
+  const g = v.gpu?.cards?.[0];
+  if (g) out.gpu = g;
+  return out;
 }
 
 /** One card per machine (main server, GPU node, intake box): KPIs, thermal chips, and its four charts. */
@@ -187,7 +232,16 @@ export function serversView(s: any, ctx: ServersCtx) {
       err: tugS.ok ? '' : tugS.error ? 'agent unreachable: ' + tugS.error : 'waiting for agent…',
     },
   ];
-  return list.map((sv) => {
+  return list.map((sv0) => {
+    const m = mqFast(ctx.mq?.[sv0.name]),
+      online = ctx.mq?.[sv0.name]?.status === 'online';
+    // MQTT readings over the hub's; the GPU keeps the hub's measured fan rpm, which MQTT doesn't carry
+    const sv = {
+      ...sv0,
+      F: { ...sv0.F, ...m, ...(m.gpu ? { gpu: { ...sv0.F.gpu, ...m.gpu } } : {}) },
+      ok: sv0.ok || online,
+      err: sv0.ok || online ? '' : sv0.err,
+    };
     const F = sv.F,
       mem = F.mem || {},
       net = F.net || {},

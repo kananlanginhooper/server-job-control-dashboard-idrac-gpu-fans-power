@@ -251,14 +251,20 @@ export type RunProfileButton = ControlsView['rpButtons'][number];
 /** The three charts under the controls: total power vs the line, power-scaler caps, PSU voltage (Low Power). */
 export function chartsView(s: any, series: any, guard: any, range: number, RL: string) {
   const env = envData(s, series, range),
-    tp = withTotals(env.pts),
+    // + the laptop (a GPU worker since 2026-10-31): servers + laptop, its own line so the servers' Total stays
+    // what the power guard holds to the line (the laptop's figure is CPU package + GPU, or battery draw when unplugged)
+    tp = withTotals(env.pts).map((p) =>
+      p['power_total'] != null && p['power_laptop'] != null
+        ? { ...p, power_all: p['power_total'] + p['power_laptop'] }
+        : p,
+    ),
     line = powerLine(s);
   const Wf = (v: any) => (v == null ? '—' : Math.round(v) + ' W'),
     Vf = (v: any) => (v == null ? '—' : Math.round(v) + ' V');
   const cur = tp.filter((p) => p['power_total'] != null).slice(-1)[0],
     pkc = tp.filter((p) => p['power_peak'] != null).slice(-1)[0];
   const pr = fitRange(
-    tp.flatMap((p) => [p['power_total'], p['power_peak']]),
+    tp.flatMap((p) => [p['power_total'], p['power_peak'], p['power_all']]),
     25,
     25,
   ) || [800, 1300];
@@ -280,6 +286,7 @@ export function chartsView(s: any, series: any, guard: any, range: number, RL: s
         yRange: pr,
         series: [
           { k: 'power_total', label: 'Total', short: 'Total', color: '--s1' },
+          { k: 'power_all', label: 'With laptop', short: '+laptop', color: '--s3' },
           { k: 'power_peak', label: 'Peak (iDRAC)', short: 'Peak', color: '--t6' },
           { k: 'power_line', label: 'Adaptive line', short: 'line', color: '--s2', dash: true },
         ],
@@ -428,6 +435,8 @@ export function chartsView(s: any, series: any, guard: any, range: number, RL: s
   return {
     line: num(line),
     legTotal: cur ? Wf(cur['power_total']) : '—',
+    legAll: cur?.['power_all'] != null ? Wf(cur['power_all']) : '—',
+    legLaptop: cur?.['power_laptop'] != null ? Wf(cur['power_laptop']) : '—',
     legPeak: pkc ? Wf(pkc['power_peak']) : '—',
     powerHi,
     throttle,
