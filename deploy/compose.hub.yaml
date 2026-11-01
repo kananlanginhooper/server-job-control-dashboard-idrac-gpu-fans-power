@@ -9,7 +9,7 @@ services:
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8110/healthz', timeout=4)"]
     environment:
-      SJC_MQTT_HOST: 127.0.0.1
+      SJC_MQTT_HOST: ${BIND_ADDR:-127.0.0.1}   # the broker is published on the LAN address only, not loopback
       SJC_LEGACY_API: ${SJC_LEGACY_API:-http://127.0.0.1:8090}
       FORWARDED_ALLOW_IPS: 127.0.0.1   # only the UI's nginx (same host) may set X-Forwarded-For
 
