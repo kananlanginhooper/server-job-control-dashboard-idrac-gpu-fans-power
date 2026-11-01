@@ -269,6 +269,9 @@ export function chartsView(s: any, series: any, guard: any, range: number, RL: s
     25,
   ) || [800, 1300];
   pr[1] = Math.max(pr[1], line + 25); // 2026-09-30: always extend the range so the target line shows
+  // owner 2026-11-01: the axis starts at 50 W so the laptop's own line (~50-120 W) shows under the servers'
+  const lap = tp.map((p) => p['power_laptop']).filter((v) => v != null);
+  if (lap.length) pr[0] = Math.min(50, Math.floor(Math.min(...lap) / 25) * 25);
   const powerHi: TrackOpts = {
     id: 'power-hi',
     points: tp.map((p) => (p['power_total'] != null ? { ...p, power_line: line } : p)),
@@ -288,6 +291,7 @@ export function chartsView(s: any, series: any, guard: any, range: number, RL: s
           { k: 'power_total', label: 'Total', short: 'Total', color: '--s1' },
           { k: 'power_all', label: 'With laptop', short: '+laptop', color: '--s3' },
           { k: 'power_peak', label: 'Peak (iDRAC)', short: 'Peak', color: '--t6' },
+          { k: 'power_laptop', label: 'Laptop', short: 'Laptop', color: '--t4' },
           { k: 'power_line', label: 'Adaptive line', short: 'line', color: '--s2', dash: true },
         ],
       },

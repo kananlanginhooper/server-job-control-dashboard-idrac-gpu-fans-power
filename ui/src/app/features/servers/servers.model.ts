@@ -180,11 +180,14 @@ export function mqFast(v: any): any {
   if (ts.length) {
     const pick = (chip: string, label: RegExp) =>
       ts.filter((x) => x.chip === chip && label.test(x.label || '')).map((x) => x.c);
-    out.temps = {
-      coretemp: pick('coretemp', /^Package/),
-      k10temp: pick('k10temp', /^Tctl$/),
-      nvme: pick('nvme', /^Composite$/),
-    };
+    // only the chips a machine has: an empty coretemp list would hide an AMD CPU's k10temp
+    out.temps = Object.fromEntries(
+      Object.entries({
+        coretemp: pick('coretemp', /^Package/),
+        k10temp: pick('k10temp', /^Tctl$/),
+        nvme: pick('nvme', /^Composite$/),
+      }).filter(([, v]) => v.length),
+    );
   }
   if (v.power?.w != null) out.power = { w: v.power.w, max: v.power.max_60s, avg: v.power.avg_60s };
   if (v.idrac) out.ipmi = v.idrac;

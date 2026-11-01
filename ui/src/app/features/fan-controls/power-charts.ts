@@ -14,8 +14,11 @@ import { ChartsView } from './fan-controls.model';
           ><i style="background:var(--s1)"></i>Total (both servers) <b>{{ c.legTotal }}</b></span
         ><span
           title="the laptop's CPU package + GPU power (battery draw when unplugged); not part of what the power scaler holds to the line"
-          ><i style="background:var(--s3)"></i>With laptop <b>{{ c.legAll }}</b
-          ><span class="muted"> (laptop {{ c.legLaptop }})</span></span
+          ><i style="background:var(--s3)"></i>With laptop <b>{{ c.legAll }}</b></span
+        ><span
+          title="the laptop's CPU package + GPU power from its own counters (battery draw when unplugged); screen, RAM, drive and charger losses aren't measured"
+          ><i style="background:var(--t4)"></i>Laptop <b>{{ c.legLaptop }}</b
+          ><span class="muted"> (CPU + GPU)</span></span
         ><span
           ><i style="background:var(--t6)"></i>Peak <b>{{ c.legPeak }}</b
           ><span class="muted"> (iDRAC, sub-second)</span></span
