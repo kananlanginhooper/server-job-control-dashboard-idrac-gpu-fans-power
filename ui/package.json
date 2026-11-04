@@ -1,6 +1,7 @@
 {
   "name": "sjc-ui",
   "version": "0.0.0",
+  "author": "Kanan Hooper (https://github.com/kananlanginhooper)",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

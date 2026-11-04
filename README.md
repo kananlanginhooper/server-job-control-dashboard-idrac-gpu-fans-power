@@ -74,3 +74,6 @@ and every response sends `Content-Security-Policy: frame-ancestors 'self' $FRAME
   `/api/guardhist` to a folder, then run `python ui/demo/make_mock.py <folder> deploy/local/site.json`. It keeps the
   shape and numbers, maps your machine names to `server-a`/`server-b`/`desk-1` and replaces every other label.
   Run the public-repo guard on the result before committing it.
+
+---
+Built by [Kanan Hooper](https://github.com/kananlanginhooper)

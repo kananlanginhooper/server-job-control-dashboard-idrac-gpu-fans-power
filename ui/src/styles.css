@@ -1597,3 +1597,14 @@ table.mat-mdc-table .num {
     flex: 0 0 auto;
   }
 }
+
+/* author credit (AUTHOR-CREDIT-STANDARD.md) */
+footer.credit {
+  margin: 16px 0 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+footer.credit a {
+  color: inherit;
+}

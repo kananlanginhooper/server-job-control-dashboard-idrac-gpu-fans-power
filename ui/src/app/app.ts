@@ -124,6 +124,9 @@ import { LiveHw } from './features/live-hardware/live-hardware';
       <div class="col c-off"><section class="card s4" app-offsite></section></div>
       <div class="col c-carve"><section class="card s8" app-carve></section></div>
     </main>
+    <footer class="credit">
+      Built by <a href="https://github.com/kananlanginhooper" target="_blank" rel="noopener">Kanan Hooper</a>
+    </footer>
     @if (tapTip(); as t) {
       <div class="taptip" role="status" (click)="tapTip.set('')">{{ t }}</div>
     }`,
