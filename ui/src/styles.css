@@ -1,3 +1,4 @@
+@import 'gridstack/dist/gridstack.min.css'; /* the card grid (shared/board/board.ts) */
 /* Ported from dashboard/index.html <style> (2026-10-04); keep in step with the live page.
    Loaded into App's shadow root, so the page-level selectors are rewritten: :root and body -> :host (2026-10-27). */
 :host {
@@ -146,28 +147,64 @@ main {
     padding: 3px 6px;
   }
 }
-/* Movable, resizable cards (owner 2026-11-06; shared/board, core/layout/board-layout.ts). GAP there = 16 px. */
-app-views-bar {
-  display: block;
-  margin-bottom: 12px;
+/* Movable, resizable cards (owner 2026-11-06): gridstack (shared/board/board.ts) + saved views in the header. */
+header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
 }
-.views-row,
-.views-line {
+header .htitle {
   display: flex;
   flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 12px;
+  text-align: center;
+}
+header .htitle h1 {
+  margin: 0;
+}
+header .grange {
+  justify-self: end;
+}
+app-views-bar {
+  position: relative;
+  justify-self: start;
+  display: flex;
   align-items: center;
-  gap: 6px 10px;
+  gap: 6px;
+  min-width: 0;
+}
+app-views-bar .seg.views {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.views-edit {
+  white-space: nowrap;
 }
 .views-panel {
-  margin-top: 8px;
-  padding: 10px 14px;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: min(760px, calc(100vw - 48px));
+  padding: 12px 14px;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
   display: grid;
   gap: 8px;
 }
 .views-panel p {
   margin: 0;
+}
+.views-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
 }
 .views-panel input,
 .views-panel textarea {
@@ -184,144 +221,75 @@ app-views-bar {
   min-width: 0;
   resize: vertical;
 }
-app-board {
-  display: grid;
-  grid-auto-flow: row dense;
-  grid-auto-rows: 4px; /* ROW */
-  column-gap: 16px;
-  align-items: start;
-  min-width: 0;
+.grid-stack {
+  margin: 0 -8px; /* gridstack's 8 px item margin: the cards line up with the header */
 }
-app-board.stack {
-  grid-template-columns: minmax(0, 1fr) !important;
+.grid-stack-item-content > .card {
+  margin: 0;
 }
-app-board.busy,
-app-board.sizing {
-  user-select: none;
-}
-.board-chip {
-  position: fixed;
-  z-index: 50;
-  pointer-events: none;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--card);
-  font-size: 12px;
-  font-weight: 600;
-}
-app-tile {
-  position: relative;
-  display: block;
-  min-width: 0;
-  padding-bottom: 16px; /* the gap to the card below */
-  align-self: start;
-}
-.tile-body {
-  min-width: 0;
-}
-.tile-content {
-  display: flow-root; /* child margins stay inside, so the measured height is the real one */
-}
-app-tile.sized .tile-body {
-  overflow: auto;
-  border-radius: 10px;
-}
-app-tile.sized .tile-content,
-app-tile.sized .tile-content > .card {
+/* a card with a fixed height fills it (its content scrolls); one that fits its content is measured as it is */
+.grid-stack-item:not(.size-to-content) > .grid-stack-item-content > .card {
   min-height: 100%;
   box-sizing: border-box;
 }
-app-tile.sized .tile-content {
-  height: 100%;
-}
-app-tile.vacant {
-  visibility: hidden;
-  padding: 0;
-}
-app-tile.hidden {
-  display: none;
-}
-app-tile.moving .tile-body {
-  opacity: 0.55;
-  outline: 2px dashed var(--accent);
-  outline-offset: 3px;
+/* where the dragged card will land */
+.grid-stack > .grid-stack-placeholder > .placeholder-content {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 2px dashed var(--accent);
   border-radius: 10px;
 }
-app-tile.resizing .tile-body {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 10px;
+.grid-stack-item.ui-draggable-dragging > .grid-stack-item-content {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+  opacity: 0.92;
 }
-app-tile h2 {
-  cursor: grab;
-}
-app-board.stack app-tile h2 {
-  cursor: auto;
-}
-/* the move handle: a dotted pill on the card's top edge */
-.tile-grab {
+/* the move handle: the card's top edge (inside its padding), with a dotted grip in the middle */
+.gs-grab {
   position: absolute;
-  top: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 44px;
-  height: 14px;
-  padding: 0;
-  border: 0;
-  border-radius: 7px;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
   cursor: grab;
   touch-action: none;
-  background:
-    radial-gradient(circle, var(--muted) 1.2px, transparent 1.6px) center / 7px 5px repeat-x,
-    var(--bar);
-  box-shadow: inset 0 0 0 1px var(--line);
+}
+.gs-grab::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 44px;
+  height: 7px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  background: radial-gradient(circle, var(--muted) 1.2px, transparent 1.6px) center / 7px 5px
+    repeat-x;
   opacity: 0;
   transition: opacity 0.15s;
 }
-/* resize handle: three diagonal lines in the corner */
-.tile-corner {
-  position: absolute;
-  right: 3px;
-  bottom: 19px;
-  width: 16px;
-  height: 16px;
-  cursor: nwse-resize;
-  touch-action: none;
-  background: linear-gradient(
-    135deg,
-    transparent 45%,
-    var(--muted) 45% 52%,
-    transparent 52% 64%,
-    var(--muted) 64% 71%,
-    transparent 71% 83%,
-    var(--muted) 83% 90%,
-    transparent 90%
-  );
-  border-bottom-right-radius: 10px;
-  opacity: 0.3;
-  transition: opacity 0.15s;
-}
-app-tile:hover .tile-grab,
-.tile-grab:focus-visible,
-app-tile.moving .tile-grab {
+.grid-stack-item:hover .gs-grab::after,
+.ui-draggable-dragging .gs-grab::after {
   opacity: 1;
 }
-app-tile:hover .tile-corner,
-app-tile.resizing .tile-corner {
-  opacity: 0.9;
+.grid-stack-static .gs-grab {
+  display: none;
+}
+.grid-stack-item > .ui-resizable-handle {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.grid-stack-item:hover > .ui-resizable-handle {
+  opacity: 0.8;
 }
 @media (pointer: coarse) {
-  .tile-grab {
-    opacity: 0.7;
-    height: 22px;
-    top: -11px;
-    width: 56px;
+  .gs-grab {
+    height: 20px;
   }
-  .tile-corner {
+  .gs-grab::after {
+    opacity: 0.7;
+    top: 6px;
+  }
+  .grid-stack-item > .ui-resizable-handle {
     opacity: 0.6;
-    width: 28px;
-    height: 28px;
   }
 }
 #alerts-card,
@@ -1660,7 +1628,11 @@ table.mat-mdc-table .num {
 /* Phone header (owner 2026-10-29: the header spent the screen on the title): at 600 px or less it is one row,
    the live status plus the range buttons as a strip that scrolls with a finger. */
 @media (max-width: 600px) {
+  app-views-bar {
+    display: none;
+  }
   header {
+    display: flex;
     flex-wrap: nowrap;
     align-items: center;
     gap: 8px;
@@ -1670,7 +1642,13 @@ table.mat-mdc-table .num {
   header .grange > .sub {
     display: none;
   }
-  header > .sub {
+  header .htitle {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    text-align: left;
+  }
+  header .htitle > .sub {
     flex: 1 1 auto;
     min-width: 0;
     white-space: nowrap;

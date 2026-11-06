@@ -1,38 +1,41 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { BANDS, BoardLayout, GridBand } from '../../core/layout/board-layout';
+import { BoardLayout } from '../../core/layout/board-layout';
 
 /**
- * Saved views above the cards (owner 2026-11-06): switch between them in one click; "Layout" opens the rest. Views are
- * kept in this browser only. Each view's Copy gives its text, to share it or to hand back as the new default; Paste
- * loads such a text as a view.
+ * Saved views, at the left of the header (owner 2026-11-06): switch between them in one click; "Layout" drops down
+ * the rest. Views are kept in this browser only. Each view's Copy gives its text, to share it or to hand back as the
+ * new default; Load takes such a text as a view.
  */
 @Component({
   selector: 'app-views-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'open.set(false)' },
   template: `
-    <div class="views-row">
-      <span class="sub">View</span>
-      <div class="seg" role="group" aria-label="Saved views">
-        @for (n of layout.names(); track n) {
-          <button
-            type="button"
-            [attr.aria-pressed]="n === layout.active()"
-            (click)="layout.select(n)"
-          >
-            {{ n }}
-          </button>
-        }
-      </div>
-      <button type="button" class="dx views-edit" [attr.aria-expanded]="open()" (click)="toggle()">
-        Layout {{ open() ? '▴' : '▾' }}
-      </button>
+    <div class="seg views" role="group" aria-label="Saved views">
+      @for (n of layout.names(); track n) {
+        <button
+          type="button"
+          [attr.aria-pressed]="n === layout.active()"
+          (click)="layout.select(n)"
+        >
+          {{ n }}
+        </button>
+      }
     </div>
+    <button type="button" class="dx views-edit" [attr.aria-expanded]="open()" (click)="toggle()">
+      Layout {{ open() ? '▴' : '▾' }}
+    </button>
     @if (open()) {
-      <div class="views-panel">
+      <div class="views-panel" role="dialog" aria-label="Layout">
         <p class="sub">
-          {{ bandText() }} · drag a card by its title or the handle on its top edge; resize it from
-          its lower-right corner (double-click the corner to reset it). Views are saved in this
-          browser only.
+          @if (layout.stacked()) {
+            Phone width: the cards stack in one column and don't move.
+          } @else {
+            Drag a card by its top edge (the dotted grip); resize it from its right edge or
+            lower-right corner. A resized card keeps its height (at most the window's); the others
+            fit their content.
+          }
+          Views are saved in this browser only.
         </p>
         <div class="views-line">
           <input
@@ -45,12 +48,7 @@ import { BANDS, BoardLayout, GridBand } from '../../core/layout/board-layout';
           <button type="button" class="dx" [disabled]="!canRename()" (click)="rename()">
             Rename
           </button>
-          <button
-            type="button"
-            class="dx"
-            [disabled]="!layout.isCustom()"
-            (click)="confirm('reset')"
-          >
+          <button type="button" class="dx" (click)="confirm('reset')">
             {{ asking() === 'reset' ? 'Click again to reset' : 'Reset to default' }}
           </button>
           <button type="button" class="dx" (click)="confirm('delete')">
@@ -67,7 +65,7 @@ import { BANDS, BoardLayout, GridBand } from '../../core/layout/board-layout';
         </div>
         <div class="views-line">
           <textarea
-            rows="2"
+            rows="3"
             aria-label="View text"
             placeholder="Paste a view's text here to load it"
             [value]="text()"
@@ -92,12 +90,6 @@ export class ViewsBar {
   readonly note = signal('');
   readonly asking = signal<'' | 'reset' | 'delete'>('');
 
-  readonly bandText = computed(() => {
-    const b = this.layout.band();
-    return b === 'stack'
-      ? 'Phone width: cards stack in one column'
-      : `${BANDS[b as GridBand].label}, ${BANDS[b as GridBand].cols} columns`;
-  });
   readonly canRename = computed(() => {
     const n = this.name().trim();
     return !!n && n !== this.layout.active() && !this.layout.names().includes(n);
@@ -134,7 +126,7 @@ export class ViewsBar {
     const t = this.layout.exportText(n);
     this.text.set(t); // shown too, in case the clipboard is unavailable
     this.note.set(
-      `Copied the text of "${n}". Paste it here (Load) on another browser, or send it to set the default.`,
+      `Copied the text of "${n}". Load it on another browser, or send it to set the default.`,
     );
     // plain http on the LAN has no clipboard API; the old way still works there (not awaited: a permission prompt
     // must not hold the panel up)

@@ -27,7 +27,6 @@ import { Offsite } from './features/offsite-carve/offsite';
 import { Carve } from './features/offsite-carve/carve';
 import { LiveHw } from './features/live-hardware/live-hardware';
 import { Board } from './shared/board/board';
-import { Tile } from './shared/board/tile';
 import { ViewsBar } from './shared/board/views-bar';
 
 /**
@@ -60,81 +59,143 @@ import { ViewsBar } from './shared/board/views-bar';
     Carve,
     LiveHw,
     Board,
-    Tile,
     ViewsBar,
   ],
   template: ` <header>
-      <h1>Data Recovery &amp; Intake</h1>
-      <span class="sub"
-        >{{ S.main }} ·
-        <span id="upd">
-          @if (upd(); as u) {
-            @if (u.stale) {
-              <span class="stale">{{ u.text }}</span>
+      <!-- views left, title centered, time range right ({{ S.owner }} 2026-11-06) -->
+      <app-views-bar />
+      <div class="htitle">
+        <h1>Data Recovery &amp; Intake</h1>
+        <span class="sub"
+          >{{ S.main }} ·
+          <span id="upd">
+            @if (upd(); as u) {
+              @if (u.stale) {
+                <span class="stale">{{ u.text }}</span>
+              } @else {
+                {{ u.text }}
+              }
             } @else {
-              {{ u.text }}
+              loading…
             }
-          } @else {
-            loading…
-          }
-        </span></span
-      >
+          </span></span
+        >
+      </div>
       <app-range-seg />
     </header>
     <app-emergency-pop />
     <main>
-      <app-views-bar />
-      <!-- movable, resizable cards in saved views ({{ S.owner }} 2026-11-06): order and sizes in core/layout/board-layout.ts -->
-      <app-board>
-        <app-tile tileKey="attention">
-          <section class="card" id="leftcol">
-            @if (alerts().length) {
-              <div id="alerts-card">
-                <h2>Needs attention</h2>
-                <div class="alerts" id="alerts">
-                  @for (a of alerts(); track a.key) {
-                    <div class="alert {{ a.cls }}">
-                      <button
-                        class="dx"
-                        title="Dismiss (comes back if it recurs after 24 h)"
-                        (click)="store.dismiss('alerts', a.key)"
-                      >
-                        ✕</button
-                      ><span [innerHTML]="a.html"></span>
-                    </div>
-                  }
+      <!-- movable, resizable cards (gridstack) in saved views ({{ S.owner }} 2026-11-06): core/layout/board-layout.ts -->
+      <div class="grid-stack" appBoard>
+        <div class="grid-stack-item" gs-id="attention">
+          <div class="grid-stack-item-content">
+            <section class="card" id="leftcol">
+              @if (alerts().length) {
+                <div id="alerts-card">
+                  <h2>Needs attention</h2>
+                  <div class="alerts" id="alerts">
+                    @for (a of alerts(); track a.key) {
+                      <div class="alert {{ a.cls }}">
+                        <button
+                          class="dx"
+                          title="Dismiss (comes back if it recurs after 24 h)"
+                          (click)="store.dismiss('alerts', a.key)"
+                        >
+                          ✕</button
+                        ><span [innerHTML]="a.html"></span>
+                      </div>
+                    }
+                  </div>
                 </div>
-              </div>
-            }
-            <div id="now-card" app-now-tasks></div>
-          </section>
-        </app-tile>
-        <app-tile tileKey="pipeline"
-          ><section class="card"><div app-pipeline></div></section
-        ></app-tile>
-        <app-tile tileKey="controls"
-          ><section class="card"><div id="ctl-card" app-fan-controls></div></section
-        ></app-tile>
-        <app-tile tileKey="gpus"><section class="card" app-gpus></section></app-tile>
-        <app-tile tileKey="env"><section class="card" app-env></section></app-tile>
-        <app-tile tileKey="servers"><section class="card" app-servers></section></app-tile>
-        <!-- live iDRAC / GPU / safety per server from the sjc backend (no room taken without it) -->
-        <app-tile tileKey="live-hw"><section class="card" app-live-hw></section></app-tile>
-        <app-tile tileKey="drive-health"
-          ><section class="card" app-drive-health></section
-        ></app-tile>
-        <app-tile tileKey="drive-registry"
-          ><section class="card" app-drive-registry></section
-        ></app-tile>
-        <app-tile tileKey="storage"><section class="card" app-storage></section></app-tile>
-        <app-tile tileKey="procs"><section class="card" app-procs></section></app-tile>
-        <app-tile tileKey="catalogue"><section class="card" app-catalogue></section></app-tile>
-        <app-tile tileKey="offsite"><section class="card" app-offsite></section></app-tile>
-        <app-tile tileKey="carve"><section class="card" app-carve></section></app-tile>
-      </app-board>
+              }
+              <div id="now-card" app-now-tasks></div>
+            </section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="pipeline">
+          <div class="grid-stack-item-content">
+            <section class="card"><div app-pipeline></div></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="controls">
+          <div class="grid-stack-item-content">
+            <section class="card"><div id="ctl-card" app-fan-controls></div></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="gpus">
+          <div class="grid-stack-item-content">
+            <section class="card" app-gpus></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="env">
+          <div class="grid-stack-item-content">
+            <section class="card" app-env></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="servers">
+          <div class="grid-stack-item-content">
+            <section class="card" app-servers></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="live-hw">
+          <div class="grid-stack-item-content">
+            <section class="card" app-live-hw></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="drive-health">
+          <div class="grid-stack-item-content">
+            <section class="card" app-drive-health></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="drive-registry">
+          <div class="grid-stack-item-content">
+            <section class="card" app-drive-registry></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="storage">
+          <div class="grid-stack-item-content">
+            <section class="card" app-storage></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="procs">
+          <div class="grid-stack-item-content">
+            <section class="card" app-procs></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="catalogue">
+          <div class="grid-stack-item-content">
+            <section class="card" app-catalogue></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="offsite">
+          <div class="grid-stack-item-content">
+            <section class="card" app-offsite></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+        <div class="grid-stack-item" gs-id="carve">
+          <div class="grid-stack-item-content">
+            <section class="card" app-carve></section>
+            <span class="gs-grab" title="Drag to move this card"></span>
+          </div>
+        </div>
+      </div>
     </main>
     <footer class="credit">
-      Built by <a href="https://github.com/kananlanginhooper" target="_blank" rel="noopener">Kanan Hooper</a>
+      Built by
+      <a href="https://github.com/kananlanginhooper" target="_blank" rel="noopener">Kanan Hooper</a>
     </footer>
     @if (tapTip(); as t) {
       <div class="taptip" role="status" (click)="tapTip.set('')">{{ t }}</div>
