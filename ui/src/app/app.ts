@@ -26,6 +26,9 @@ import { Catalogue } from './features/storage/catalogue';
 import { Offsite } from './features/offsite-carve/offsite';
 import { Carve } from './features/offsite-carve/carve';
 import { LiveHw } from './features/live-hardware/live-hardware';
+import { Board } from './shared/board/board';
+import { Tile } from './shared/board/tile';
+import { ViewsBar } from './shared/board/views-bar';
 
 /**
  * Data Recovery & Intake dashboard, Angular rewrite of main server :8090 (dashboard/index.html).
@@ -56,6 +59,9 @@ import { LiveHw } from './features/live-hardware/live-hardware';
     Offsite,
     Carve,
     LiveHw,
+    Board,
+    Tile,
+    ViewsBar,
   ],
   template: ` <header>
       <h1>Data Recovery &amp; Intake</h1>
@@ -77,9 +83,11 @@ import { LiveHw } from './features/live-hardware/live-hardware';
     </header>
     <app-emergency-pop />
     <main>
-      <section class="card s12" id="top-card">
-        <div class="topsplit">
-          <div id="leftcol">
+      <app-views-bar />
+      <!-- movable, resizable cards in saved views ({{ S.owner }} 2026-11-06): order and sizes in core/layout/board-layout.ts -->
+      <app-board>
+        <app-tile tileKey="attention">
+          <section class="card" id="leftcol">
             @if (alerts().length) {
               <div id="alerts-card">
                 <h2>Needs attention</h2>
@@ -99,30 +107,31 @@ import { LiveHw } from './features/live-hardware/live-hardware';
               </div>
             }
             <div id="now-card" app-now-tasks></div>
-          </div>
-          <div app-pipeline></div>
-          <div id="ctl-card" app-fan-controls></div>
-        </div>
-      </section>
-
-      <!-- live iDRAC / GPU / safety per server from the sjc backend (hidden without it) -->
-      <div class="col c-live"><section class="card s12" app-live-hw></section></div>
-      <!-- GPUs first, then power, then servers ({{ S.owner }} 2026-10-26) -->
-      <div class="col c-gpu"><section class="card s12" app-gpus></section></div>
-      <div class="col c-env"><section class="card s12" app-env></section></div>
-      <div class="col c-srv"><section class="card s12" app-servers></section></div>
-      <div class="col c2">
-        <!-- Drive health + Drive registry side by side ({{ S.owner }} 2026-09-29) -->
-        <section class="card s6" app-drive-health></section>
-        <section class="card s6" app-drive-registry></section>
-      </div>
-      <div class="col c3">
-        <section class="card s12" app-storage></section>
-        <section class="card s6" app-procs></section>
-        <section class="card s6" app-catalogue></section>
-      </div>
-      <div class="col c-off"><section class="card s4" app-offsite></section></div>
-      <div class="col c-carve"><section class="card s8" app-carve></section></div>
+          </section>
+        </app-tile>
+        <app-tile tileKey="pipeline"
+          ><section class="card"><div app-pipeline></div></section
+        ></app-tile>
+        <app-tile tileKey="controls"
+          ><section class="card"><div id="ctl-card" app-fan-controls></div></section
+        ></app-tile>
+        <app-tile tileKey="gpus"><section class="card" app-gpus></section></app-tile>
+        <app-tile tileKey="env"><section class="card" app-env></section></app-tile>
+        <app-tile tileKey="servers"><section class="card" app-servers></section></app-tile>
+        <!-- live iDRAC / GPU / safety per server from the sjc backend (no room taken without it) -->
+        <app-tile tileKey="live-hw"><section class="card" app-live-hw></section></app-tile>
+        <app-tile tileKey="drive-health"
+          ><section class="card" app-drive-health></section
+        ></app-tile>
+        <app-tile tileKey="drive-registry"
+          ><section class="card" app-drive-registry></section
+        ></app-tile>
+        <app-tile tileKey="storage"><section class="card" app-storage></section></app-tile>
+        <app-tile tileKey="procs"><section class="card" app-procs></section></app-tile>
+        <app-tile tileKey="catalogue"><section class="card" app-catalogue></section></app-tile>
+        <app-tile tileKey="offsite"><section class="card" app-offsite></section></app-tile>
+        <app-tile tileKey="carve"><section class="card" app-carve></section></app-tile>
+      </app-board>
     </main>
     <footer class="credit">
       Built by <a href="https://github.com/kananlanginhooper" target="_blank" rel="noopener">Kanan Hooper</a>
