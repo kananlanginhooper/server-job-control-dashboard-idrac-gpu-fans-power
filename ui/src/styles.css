@@ -273,6 +273,14 @@ app-views-bar .seg.views {
 .grid-stack-static .gs-grab {
   display: none;
 }
+/* the whole card drags (owner 2026-11-16): show it on the card titles and the grip */
+.grid-stack:not(.grid-stack-static) .grid-stack-item-content h2 {
+  cursor: grab;
+}
+.grid-stack-item.ui-draggable-dragging,
+.grid-stack-item.ui-draggable-dragging * {
+  cursor: grabbing !important;
+}
 .grid-stack-item > .ui-resizable-handle {
   opacity: 0;
   transition: opacity 0.15s;

@@ -2,9 +2,9 @@ import { Injectable, computed, signal } from '@angular/core';
 import { lsKey } from '../module-context';
 
 /**
- * Card arrangement for the page (owner 2026-11-06), laid out by gridstack (shared/board/board.ts): the cards in
- * order with a width in 12 columns each, and a fixed height only for cards resized by hand (the rest fit their
- * content). Kept in named views in this browser only (localStorage); a view's text export is for sharing it or for
+ * Card arrangement for the page (owner 2026-11-06, 3 columns since 11-16), laid out by gridstack
+ * (shared/board/board.ts): each card's column, row and width (1-3 columns), and a fixed height only for cards resized
+ * by their corner (the rest fit their content). Cards rise to fill the space above them but keep their column. Kept in named views in this browser only (localStorage); a view's text export is for sharing it or for
  * pasting into DEFAULT_ITEMS below to change the default.
  */
 
@@ -21,7 +21,8 @@ interface Views {
   views: Record<string, Item[]>;
 }
 
-export const COLUMNS = 12;
+/** the page is 3 columns wide; a card spans 1, 2 or 3 (owner 2026-11-16) */
+export const COLUMNS = 3;
 /** gridstack row height in px: fine enough that a resized card's height is close to what was dragged */
 export const CELL = 8;
 /** below this board width the cards stack in one column and don't move */
@@ -45,25 +46,26 @@ export const TILE_ORDER = [
   'carve',
 ];
 
-/** the page as it was before cards could move: the top three side by side, then full-width cards and pairs */
-export const DEFAULT_ITEMS: Item[] = Object.entries({
-  attention: 4,
-  pipeline: 4,
-  controls: 4,
-  gpus: 12,
-  env: 12,
-  servers: 12,
-  'live-hw': 12,
-  'drive-health': 6,
-  'drive-registry': 6,
-  storage: 12,
-  procs: 6,
-  catalogue: 6,
-  offsite: 4,
-  carve: 8,
-}).map(([id, w]) => ({ id, w }));
+/** the default: the top three side by side, the wide cards full width, then the smaller ones three or two to a row.
+ *  y is a row order here (each row starts below the tallest card of the one before; cards then rise into free space). */
+export const DEFAULT_ITEMS: Item[] = [
+  ['attention', 0, 0, 1],
+  ['pipeline', 1, 0, 1],
+  ['controls', 2, 0, 1],
+  ['gpus', 0, 1, 3],
+  ['env', 0, 2, 3],
+  ['servers', 0, 3, 3],
+  ['live-hw', 0, 4, 3],
+  ['drive-health', 0, 5, 1],
+  ['drive-registry', 1, 5, 2],
+  ['storage', 0, 6, 1],
+  ['procs', 1, 6, 1],
+  ['catalogue', 2, 6, 1],
+  ['offsite', 0, 7, 1],
+  ['carve', 1, 7, 2],
+].map(([id, x, y, w]) => ({ id: id as string, x: x as number, y: y as number, w: w as number }));
 
-const KEY = 'layout.views.v2';
+const KEY = 'layout.views.v3'; // v3: 3 columns (v2 was 12, 'list' order)
 const FIRST = 'Main';
 
 /** A view from anything (stored or pasted): known cards only, each once, sizes clamped, missing cards appended. */
@@ -75,7 +77,7 @@ export function cleanItems(v: unknown): Item[] {
     if (!TILE_ORDER.includes(id) || seen.has(id)) continue;
     seen.add(id);
     const n = (k: string) => (Number.isFinite(+x[k]) ? Math.max(0, Math.round(+x[k])) : undefined);
-    const it: Item = { id, w: Math.min(COLUMNS, Math.max(1, n('w') || 12)) };
+    const it: Item = { id, w: Math.min(COLUMNS, Math.max(1, n('w') || 1)) };
     if (n('x') != null) it.x = Math.min(COLUMNS - it.w, n('x')!);
     if (n('y') != null) it.y = n('y');
     if (n('h')) it.h = n('h');
@@ -156,7 +158,7 @@ export class BoardLayout {
 
   /** a view as text, for sharing or for pasting into DEFAULT_ITEMS */
   exportText(name = this.active()): string {
-    return JSON.stringify({ layoutVersion: 2, name, items: cleanItems(this.store().views[name]) });
+    return JSON.stringify({ layoutVersion: 3, name, items: cleanItems(this.store().views[name]) });
   }
   /** a pasted view added (or replacing one of the same name) and made active; returns its name, or an error */
   importText(text: string): { name?: string; error?: string } {
@@ -166,8 +168,8 @@ export class BoardLayout {
     } catch {
       return { error: "That isn't a layout: paste the text a view's Copy gave you." };
     }
-    if (v?.layoutVersion !== 2 || !Array.isArray(v.items))
-      return { error: 'That text has no layout in it (layoutVersion 2).' };
+    if (v?.layoutVersion !== 3 || !Array.isArray(v.items))
+      return { error: 'That text has no 3-column layout in it (layoutVersion 3).' };
     const name = String(v.name || 'Imported').trim() || 'Imported';
     this.store.update((s) => ({
       active: name,

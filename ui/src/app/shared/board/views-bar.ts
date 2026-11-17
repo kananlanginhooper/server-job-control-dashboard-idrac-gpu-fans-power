@@ -31,9 +31,10 @@ import { BoardLayout } from '../../core/layout/board-layout';
           @if (layout.stacked()) {
             Phone width: the cards stack in one column and don't move.
           } @else {
-            Drag a card by its top edge (the dotted grip); resize it from its right edge or
-            lower-right corner. A resized card keeps its height (at most the window's); the others
-            fit their content.
+            Three columns: drag a card from anywhere on it (not its buttons, links or tables) into
+            any column, under another card too. Its left or right edge sets the width (1-3 columns);
+            the lower-right corner also fixes its height (at most the window's). Other cards fit
+            their content and rise into free space above them.
           }
           Views are saved in this browser only.
         </p>

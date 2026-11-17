@@ -12,13 +12,19 @@ import { BoardLayout, CELL, COLUMNS, Item, STACK_BELOW } from '../../core/layout
 
 /**
  * The movable, resizable card grid (owner 2026-11-06), by gridstack (MIT, gridstack.js). Angular renders the cards as
- * .grid-stack-item children of this element; gridstack only positions them. 'list' mode keeps the cards in order and
- * reflows the rest while one is dragged (live placeholder); a card fits its content until it's resized by hand, and
- * its height is capped at the window's. Below STACK_BELOW px the grid is one column and nothing moves.
+ * .grid-stack-item children of this element; gridstack only positions them. 3 columns (owner 2026-11-16): drag a card
+ * from anywhere on it into any column, under another card too ('top' mode: cards rise into free space above them but
+ * keep their column; a dashed placeholder shows where it lands). Resize snaps to 1-3 columns; the side edges change
+ * only the width (the card still fits its content), the corner also fixes the height (capped at the window's).
+ * Below STACK_BELOW px the grid is one column and nothing moves; widening again re-applies the saved view, so
+ * narrowing and widening the window never reshuffles it.
  * gridstack's CSS is imported in styles.css (the app renders in a shadow root with one stylesheet).
  */
 /** px from the window's top or bottom edge where a drag scrolls the page */
 const EDGE = 50;
+/** a press on these starts no drag: they keep their own clicks, selection and scrolling */
+const DRAG_CANCEL =
+  'button, a, input, textarea, select, label, [role=button], mat-button-toggle, table, pre, code, .seg, .views-panel';
 
 @Directive({ selector: '[appBoard]' })
 export class Board {
@@ -34,22 +40,28 @@ export class Board {
           column: COLUMNS,
           cellHeight: CELL,
           margin: 8,
-          mode: 'list',
+          mode: 'top',
           sizeToContent: true,
           animate: true,
-          handle: '.gs-grab',
-          resizable: { handles: 'se,e' },
-          columnOpts: { breakpoints: [{ w: STACK_BELOW, c: 1 }], layout: 'list' },
+          // the whole card is the handle; pressing a control, a link, a table or a field does what it did before
+          draggable: { cancel: DRAG_CANCEL },
+          resizable: { handles: 'e,se,w' },
+          // above the last breakpoint gridstack uses columnMax (default 12), not 'column'
+          columnOpts: {
+            columnMax: COLUMNS,
+            breakpoints: [{ w: STACK_BELOW, c: 1 }],
+            layout: 'list',
+          },
         },
         this.el,
       )!);
       this.apply();
-      // a card being resized stops fitting its content (gridstack only lets a fitted card change width), and keeps
-      // the height it's given; the rest still fit their content
-      // (on the press itself: by gridstack's 'resizestart' event it has already locked the height)
+      // a card resized by its corner stops fitting its content and keeps the height it's given (gridstack only lets a
+      // fitted card change width); the side edges keep it fitting. On the press itself: by gridstack's 'resizestart'
+      // event it has already locked the height.
       const unfit = (e: Event) => {
         const t = e.target as HTMLElement;
-        if (!t.classList?.contains('ui-resizable-handle')) return;
+        if (!t.classList?.contains('ui-resizable-se')) return;
         const item = t.closest<GridItemHTMLElement>('.grid-stack-item');
         if (item?.gridstackNode) item.gridstackNode.sizeToContent = false;
         item?.classList.remove('size-to-content');
@@ -114,14 +126,16 @@ export class Board {
     });
   }
 
-  /** the active view onto the grid. 'list' mode packs the cards row by row in order, so a view is its cards' order,
-   *  widths and hand-set heights; positions are given as that order and gridstack places each one. */
+  /** the active view onto the grid: each card's column, row and width (and a corner-set height) */
   private apply() {
+    const items = [...this.layout.items()].sort(
+      (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
+    );
     this.grid!.load(
-      this.layout.items().map((it, i) => ({
+      items.map((it) => ({
         id: it.id,
-        x: 0,
-        y: i,
+        x: it.x ?? 0,
+        y: it.y ?? 0,
         w: it.w,
         ...(it.h ? { h: it.h, sizeToContent: false } : { sizeToContent: true }),
       })),
@@ -141,12 +155,16 @@ export class Board {
         grid.update(el, { maxH, ...(n.h && n.h > maxH && !n.sizeToContent ? { h: maxH } : {}) });
       if (n.sizeToContent) grid.resizeToContent(el);
     }
-    const stacked = grid.getColumn() === 1;
+    const stacked = grid.getColumn() !== COLUMNS;
+    const was = this.layout.stacked();
     this.layout.stacked.set(stacked);
     grid.setStatic(stacked);
+    // back to full width: lay out the saved view again, rather than gridstack's guess from the one-column order
+    if (was && !stacked) this.apply();
   }
 
   private save() {
+    if (this.grid!.getColumn() !== COLUMNS) return; // the phone's one-column stack is never saved
     const nodes = this.grid!.getGridItems()
       .map((el) => el.gridstackNode!)
       .sort((a, b) => a.y! - b.y! || a.x! - b.x!);
