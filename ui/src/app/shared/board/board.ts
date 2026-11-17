@@ -20,8 +20,12 @@ import { BoardLayout, CELL, COLUMNS, Item, STACK_BELOW } from '../../core/layout
  * narrowing and widening the window never reshuffles it.
  * gridstack's CSS is imported in styles.css (the app renders in a shadow root with one stylesheet).
  */
-/** px from the window's top or bottom edge where a drag scrolls the page */
-const EDGE = 50;
+/** height in px of the window's top and bottom bands where a drag scrolls the page (shown with an arrow) */
+const EDGE = 64;
+const ARROW = (d: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+/** px the pointer must move from where a drag began before the edge zone scrolls (a card grabbed low doesn't) */
+const ARM = 24;
 /** a press on these starts no drag: they keep their own clicks, selection and scrolling */
 const DRAG_CANCEL =
   'button, a, input, textarea, select, label, [role=button], mat-button-toggle, table, pre, code, .seg, .views-panel';
@@ -44,7 +48,7 @@ export class Board {
           sizeToContent: true,
           animate: true,
           // the whole card is the handle; pressing a control, a link, a table or a field does what it did before
-          draggable: { cancel: DRAG_CANCEL },
+          draggable: { cancel: DRAG_CANCEL, scroll: false }, // scrolling: see 'dragstart' below
           resizable: { handles: 'e,se,w' },
           // above the last breakpoint gridstack uses columnMax (default 12), not 'column'
           columnOpts: {
@@ -70,31 +74,92 @@ export class Board {
       this.el.addEventListener('mousedown', unfit, true);
       this.el.addEventListener('touchstart', unfit, true);
       grid.on('resizestop', () => this.save());
-      // the page is long and the grip sits at the card's top, which gridstack's own autoscroll (it scrolls by how far
-      // the card is clipped) barely moves upward: with the pointer near the window's top or bottom edge, scroll
-      // steadily, then replay the pointer so the placeholder follows
+      // Scrolling while dragging follows the pointer only (owner 2026-11-16: the page kept scrolling on its own).
+      // gridstack's own autoscroll is off (draggable.scroll: false): it scrolls whenever the dragged card is clipped
+      // by the window, and most cards here are about as tall as the window, so it ran on with the pointer still; and
+      // as gridstack grows the grid under a card dragged low, the page kept getting longer. Here the page scrolls
+      // only with the pointer inside the band shown at the window's top or bottom (owner 2026-11-17: an overlay with an
+      // up and a down arrow; EDGE px tall, faster nearer the edge), only once the pointer has moved from where the drag
+      // began, and never past the bottom of the other cards plus room to drop one. A band shows only while the page
+      // can scroll that way. After each step the pointer is replayed so the placeholder follows.
+      const band = (dir: 'up' | 'down', d: string) => {
+        const z = document.createElement('div');
+        z.className = `drag-zone drag-zone-${dir}`;
+        z.style.height = `${EDGE}px`;
+        z.setAttribute('aria-hidden', 'true');
+        z.innerHTML = ARROW(d);
+        return z;
+      };
+      const up = band('up', 'M5 15l7-7 7 7'),
+        down = band('down', 'M5 9l7 7 7-7');
+      // at the top level of the app's shadow root, so they sit over the sticky header and the dragged card
+      const root = this.el.getRootNode() as ShadowRoot | Document;
+      (root instanceof ShadowRoot ? root : document.body).append(up, down);
+      // the top band starts under the sticky header; the pointer over the header also scrolls up (at full speed)
+      let top = 0;
       let px = 0,
         py = 0,
+        x0 = 0,
+        y0 = 0,
+        armed = false,
+        floor = 0,
         scroller = 0;
       const track = (e: MouseEvent) => {
-        if (e.isTrusted) [px, py] = [e.clientX, e.clientY];
+        if (!e.isTrusted) return;
+        [px, py] = [e.clientX, e.clientY];
+        if (!x0 && !y0) [x0, y0] = [px, py];
+        armed ||= Math.hypot(px - x0, py - y0) > ARM;
       };
-      grid.on('dragstart', () => {
+      grid.on('dragstart', (_e, item) => {
+        [px, py, x0, y0, armed] = [0, 0, 0, 0, false];
+        // the lowest page y the drag may scroll to: the bottom of every other card, plus room for this one
+        floor =
+          Math.max(
+            0,
+            ...grid
+              .getGridItems()
+              .filter((el) => el !== item)
+              .map((el) => el.getBoundingClientRect().bottom + scrollY),
+          ) + Math.min(item.getBoundingClientRect().height, innerHeight / 2);
+        top = Math.max(0, root.querySelector('header')?.getBoundingClientRect().bottom ?? 0);
+        up.style.top = `${top}px`;
         document.addEventListener('mousemove', track, true);
-        scroller = window.setInterval(() => {
-          const dy = py < EDGE ? -1 : py > innerHeight - EDGE ? 1 : 0;
-          if (!dy || !py) return;
-          window.scrollBy(0, dy * 28);
+        const tick = () => {
+          const roomUp = scrollY,
+            roomDown = floor - (scrollY + innerHeight);
+          up.classList.toggle('idle', roomUp < 1);
+          down.classList.toggle('idle', roomDown < 1);
+          const near = !armed
+            ? 0
+            : py < top + EDGE
+              ? py - (top + EDGE)
+              : py > innerHeight - EDGE
+                ? py - (innerHeight - EDGE)
+                : 0;
+          up.classList.toggle('in', near < 0);
+          down.classList.toggle('in', near > 0);
+          if (!near) return;
+          // 2 px per tick at the band's inner edge, up to 30 at the window's edge (or past it)
+          const step = Math.sign(near) * Math.min(30, 2 + (Math.abs(near) / EDGE) * 28);
+          const dy = step > 0 ? Math.min(step, roomDown) : Math.max(step, -roomUp);
+          if (Math.abs(dy) < 1) return;
+          window.scrollBy(0, dy);
           document.dispatchEvent(
             new MouseEvent('mousemove', { clientX: px, clientY: py, bubbles: true }),
           );
-        }, 30);
+        };
+        tick();
+        up.classList.add('on');
+        down.classList.add('on');
+        scroller = window.setInterval(tick, 16);
       });
+      // one handler per drag event: gridstack keeps only the last one given for a name
       grid.on('dragstop', () => {
         document.removeEventListener('mousemove', track, true);
         clearInterval(scroller);
+        for (const z of [up, down]) z.classList.remove('on', 'in', 'idle');
+        this.save();
       });
-      grid.on('dragstop', () => this.save());
       // cards change height as their data arrives: refit those that size to content
       const ro = new ResizeObserver((entries) => {
         for (const e of entries) {
@@ -116,6 +181,9 @@ export class Board {
         ro.disconnect();
         clearTimeout(t);
         window.removeEventListener('resize', fit);
+        clearInterval(scroller);
+        up.remove();
+        down.remove();
         grid.destroy(false);
       });
     });
