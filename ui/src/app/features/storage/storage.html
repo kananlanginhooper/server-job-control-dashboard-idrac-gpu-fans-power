@@ -15,7 +15,12 @@
     >
     <ng-container matColumnDef="dev"
       ><th mat-header-cell *matHeaderCellDef>Device</th>
-      <td mat-cell *matCellDef="let r" class="mono">{{ r.dev }}</td></ng-container
+      <td mat-cell *matCellDef="let r" class="mono">
+        {{ r.dev }}
+        @if (r.model) {
+          <br /><span class="muted">{{ r.model }}</span>
+        }
+      </td></ng-container
     >
     <ng-container matColumnDef="used"
       ><th mat-header-cell *matHeaderCellDef style="width: 20%">Used</th>

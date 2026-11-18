@@ -6,23 +6,12 @@ import { SITE, t } from '../../core/site';
 import { Bar } from '../../shared/bar';
 import { fb, rate } from '../../shared/format';
 
+// What a mount holds; everything else on the row (device, model, network source, other mount points) comes live from
+// the hub's /proc/mounts reading (2026-11-18: the old fixed device list went stale when /b-/e moved to {node} /raid6).
 const ROLE: Record<string, string> = {
-  '/': 'OS + MySQL',
-  '/b': 'earlier files',
-  '/c': t('{node} prior output (Step A)'),
-  '/d': 'intake batch 2 + Step A samba',
-  '/e': 'intake batch 1 (slot-5 SSD)',
-  '/n2': 'Acer NVMe',
-  '/n4': '990 PRO NVMe — no sustained writes',
-};
-const DEVMOUNT: Record<string, string> = {
-  sda: '/',
-  sdb: '/b',
-  sdc: '/c',
-  sdd: '/d',
-  sde: '/e',
-  nvme0n1: '/n2',
-  nvme1n1: '/n4',
+  '/': 'OS',
+  '/data': 'RAID 5 · carve output',
+  '/n4': 'no sustained writes',
 };
 const ROLE_NODE: Record<string, string> = {
   '/': 'OS (boot RAID 5, 4 TB disks, DEGRADED: 3 of 4)',
@@ -49,7 +38,7 @@ export class Storage {
     const L = this.store.limits(),
       HDR = (s.health || {}).drives || [];
     const both: [string, any, Record<string, string>, Record<string, string>][] = [
-      [SITE.main, s.fast || {}, ROLE, DEVMOUNT],
+      [SITE.main, s.fast || {}, ROLE, {}],
       [SITE.node, (s.remote || {}).fast || {}, ROLE_NODE, DEV_NODE],
     ];
     const diskTemp = (host: string, d: string | null) => {
@@ -86,10 +75,22 @@ export class Storage {
         seen = new Set<string>(),
         rows: any[] = [];
       const row = (m: any, d: string | null) => {
+        const first = !!d && !seen.has(d); // two mounts on one disk: its read/write rate shows once
         if (d) seen.add(d);
         const u = m && m.usage,
-          used = u && !m.shutdown ? (u.total - u.free) / u.total : null,
-          v = d ? io[d] : null;
+          // like df: used over (used + available), so blocks reserved for root don't count as used
+          used = u && !m.shutdown ? (u.used != null ? u.used / (u.used + u.free) : (u.total - u.free) / u.total) : null,
+          v = d && first ? io[d] : null;
+        const role = !m
+          ? ''
+          : [
+              roles[m.mount],
+              m.source ? 'network mount' : '',
+              m.ro ? 'read-only' : '',
+              m.also?.length ? 'also ' + m.also.join(', ') : '',
+            ]
+              .filter(Boolean)
+              .join(' · ');
         const usedCell = !m
           ? { kind: 'none', text: 'no mount' }
           : !m.mounted
@@ -100,22 +101,23 @@ export class Storage {
                   kind: 'bar',
                   frac: used,
                   cls: used > 0.9 ? 'bad' : used > 0.75 ? 'warn' : '',
-                  text: `${(used * 100).toFixed(0)}% of ${fb(u.total, 1)}`,
-                  tip: `${fb(u.total - u.free)} used of ${fb(u.total)} (${(used * 100).toFixed(0)}%)`,
+                  text: `${Math.ceil(used * 100)}% of ${fb(u.total, 1)}`,
+                  tip: `${fb(u.used ?? u.total - u.free)} used of ${fb(u.total)} (${Math.ceil(used * 100)}%)${m.source ? ` · on ${m.source}, shared with every mount from there` : ''}`,
                 };
         return {
           host,
           mount: m ? m.mount : '—',
-          role: m ? roles[m.mount] || '' : '',
-          dev: d || '—',
+          role,
+          dev: m?.source || (m?.part ?? d) || '—',
+          model: m?.model || '',
           used: usedCell as any,
           free: used == null ? '' : fb(u.free),
-          rd: v ? rate(v.read) : '—',
-          wr: v ? rate(v.write) : '—',
-          temp: diskTemp(host, d),
+          rd: v ? rate(v.read) : d && !first ? '″' : '—',
+          wr: v ? rate(v.write) : d && !first ? '″' : '—',
+          temp: first ? diskTemp(host, d) : null,
         };
       };
-      for (const m of F.mounts || []) rows.push(row(m, devOf[m.mount] || null));
+      for (const m of F.mounts || []) rows.push(row(m, m.source ? null : m.dev || devOf[m.mount] || null));
       for (const d of Object.keys(io).sort()) if (!seen.has(d)) rows.push(row(null, d));
       return rows;
     });

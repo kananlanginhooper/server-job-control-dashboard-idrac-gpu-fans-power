@@ -13,8 +13,9 @@ CNF = os.path.expanduser(f"~/.{CFG['db_cnf_name']}")
 PORT = int(os.environ.get("HUB_PORT") or 8090)
 HOST = MAIN
 NIC = CFG['nic']
-MOUNTS = ["/", "/b", "/c", "/d", "/e", "/n2", "/n4"]
-DISKS = ["sda", "sdb", "sdc", "sdd", "sde", "nvme0n1", "nvme1n1"]
+FS_TYPES = {"ext4", "xfs", "btrfs", "zfs", "f2fs", "nfs", "nfs4"}   # the storage card lists every mount of these, read live
+# whole disks with a device behind them (no loop, ram, zram, optical); read once, as drives only change with a reboot
+DISKS = sorted(d for d in os.listdir("/sys/block") if os.path.exists(f"/sys/block/{d}/device") and not d.startswith(("sr", "loop", "ram", "zram")))
 DU_TARGETS = {"e-intake": "/e/intake", "d-intake": "/d/intake"}
 NODE_FOLDERS = [
     {"name": f"{CFG['node_old_home']}/recovery", "dest": f"/c/{NODE}-prior/{CFG['node_old_dest']}", "src_bytes": 2.8e12, "note": "PhotoRec output, 38,286 folders + ddrescue map"},
@@ -42,6 +43,7 @@ HUB_TABLES = [
 ]
 lock = threading.Lock()
 pool = ThreadPoolExecutor(8)
+statvfs_pool, STATVFS = ThreadPoolExecutor(16), {}   # mounts_live()
 
 
 def read(p, default=""):
@@ -79,17 +81,60 @@ def netbytes():
     return int(read(b + "rx_bytes", "0")), int(read(b + "tx_bytes", "0"))
 
 
-def mount_usage(m):
-    def f():
-        st = os.statvfs(m)
-        return {"total": st.f_blocks * st.f_frsize, "free": st.f_bavail * st.f_frsize}
-    r = with_timeout(f, 2)
-    opts = ""
+def disk_of(src):
+    """/dev/sda3 -> sda, /dev/nvme0n1 -> nvme0n1 (a partition's parent from sysfs)"""
+    name = os.path.basename(src)
+    real = os.path.realpath(f"/sys/class/block/{name}")
+    return os.path.basename(os.path.dirname(real)) if os.path.exists(real + "/partition") else name
+
+
+def mounts_live():
+    """every mounted filesystem the card shows, from /proc/mounts: one row per filesystem (its shortest mount point);
+    the other mount points of the same filesystem go in 'also'. statvfs runs in parallel, 2 s each, so a hung
+    network mount costs at most 2 s and shows as unreadable."""
+    rows = {}
     for line in read("/proc/mounts").splitlines():
-        p = line.split()
-        if p[1] == m:
-            opts = p[3]
-    return {"mount": m, "usage": r, "shutdown": "shutdown" in opts or "emergency_ro" in opts, "mounted": bool(opts)}
+        src, m, fs, opts = line.split()[:4]
+        if fs not in FS_TYPES or m.startswith("/boot"):
+            continue
+        m = m.replace(r"\040", " ")
+        r = rows.get(src)
+        if r and len(r["mount"]) <= len(m):
+            r["also"].append(m)
+            continue
+        if r:
+            r["also"].append(r["mount"])
+        row = {"mount": m, "fs": fs, "also": r["also"] if r else [], "mounted": True,
+               "shutdown": "shutdown" in opts or "emergency_ro" in opts, "ro": opts.split(",")[0] == "ro"}
+        if fs.startswith("nfs"):
+            host, _, path = src.partition(":")
+            row["source"] = f"{NODE if host in NODE_IPS else host}:{path}"
+        else:
+            row["dev"] = disk_of(src)
+            row["part"] = os.path.basename(src)
+            row["model"] = read(f"/sys/block/{row['dev']}/device/model")
+        rows[src] = row
+    out = sorted(rows.values(), key=lambda r: (r["fs"].startswith("nfs"), r["mount"] != "/", r["mount"]))
+
+    def usage(m):
+        st = os.statvfs(m)
+        used = (st.f_blocks - st.f_bfree) * st.f_frsize
+        return {"total": st.f_blocks * st.f_frsize, "free": st.f_bavail * st.f_frsize, "used": used}
+    # own threads, and never a second statvfs on a mount whose last one hasn't returned: a hung hard NFS mount holds
+    # one thread, not the shared pool
+    futs = []
+    for r in out:
+        f = STATVFS.get(r["mount"])
+        if f is None or f.done():
+            f = STATVFS[r["mount"]] = statvfs_pool.submit(usage, r["mount"])
+        futs.append((r, f))
+    end = time.time() + 2
+    for r, f in futs:
+        try:
+            r["usage"] = f.result(timeout=max(0, end - time.time()))
+        except Exception:
+            r["usage"] = None
+    return out
 
 
 def temps():
@@ -1924,7 +1969,7 @@ def fast_loop():
                 "ram_bw": (lambda t: json.loads(t) if t else None)(read("/dev/shm/imc-bw.json")),
                 "peak_power": (lambda t: json.loads(t) if t else None)(read("/dev/shm/peak-power.json")),   # iDRAC true 30-s peak (peak-power.service)
                 "net": {"rx": rx, "tx": tx, "speed_mbit": int(read(f"/sys/class/net/{NIC}/speed", "0") or 0)},
-                "disks": disks, "mounts": [mount_usage(m) for m in MOUNTS], "temps": (lambda fm: fm["temps"] if fm.get("temps") and time.time() - fm["at"] < 15 else temps())(state.get("fanlatest") or {}), "edac": edac(),
+                "disks": disks, "mounts": mounts_live(), "temps": (lambda fm: fm["temps"] if fm.get("temps") and time.time() - fm["at"] < 15 else temps())(state.get("fanlatest") or {}), "edac": edac(),
                 "nvme": nvme_states(), "procs": procs, "dstate": dcount, "stuck": state.get("stuck", []), "peers": peers(), "ipmi": state.get("ipmi"),
                 "power": dcmi_power(["sudo", "-n", "ipmitool"]),
                 "fan_control": (lambda t: json.loads(t) if t else None)(read("/run/fan-control.json")),

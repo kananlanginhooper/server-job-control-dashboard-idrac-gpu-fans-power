@@ -452,8 +452,8 @@ main > *, .col > *, .topsplit > *, .gpus > *, .servers > *, .srvgrid > *, .envgr
   </div>
 </main>
 <script>
-const ROLE = {"/": "OS + MySQL", "/b": "earlier files", "/c": "@@CFG:NODE@@ prior output (Step A)", "/d": "intake batch 2 + Step A samba",
-  "/e": "intake batch 1 (slot-5 SSD)", "/n2": "Acer NVMe", "/n4": "990 PRO NVMe — no sustained writes"};
+// what a mount holds; device, model, network source and other mount points come live from the hub's /proc/mounts reading (2026-11-18)
+const ROLE = {"/": "OS", "/data": "RAID 5 · carve output", "/n4": "no sustained writes"};
 let LIM_J = null;   // component-limits.json via /api/state (shared with fan-control); the literals are fallbacks
 const limKind = (k, host) => { const b = LIM_J && LIM_J.kinds && LIM_J.kinds[k]; if (!b) return null; return Object.assign({}, b, ((LIM_J.hosts || {})[host] || {})[k] || {}); };
 const lim = (k, dflt, host) => { const v = limKind(k, host); return v && v.yellow != null ? [v.yellow, v.red ?? 999] : dflt; };
@@ -470,7 +470,6 @@ const GPU_FAN_MAX_RPM = 6030;
 const gpuFanPct = g => g && g.fan_rpm ? Math.round(g.fan_rpm / GPU_FAN_MAX_RPM * 100) : g && g.fan_pct != null ? Math.round(g.fan_pct) : null;   // no 100% cap: firmware boosts run above it (@@CFG:owner@@ 2026-09-28)
 let WDRED_WARN = 69, WDRED_BAD = 70;
 const driveThr = d => d.proto === "NVMe" ? lim("nvme", [NVME_WARN, NVME_BAD], d.host) : /WD Red/i.test(d.model || "") ? lim("ssd", [WDRED_WARN, WDRED_BAD], d.host) : /MG03SCA/i.test(d.model || "") ? lim("toshiba", [45, 50], d.host) : lim("hdd", (t => [t - 5, t])(d.trip || 60), d.host);
-const DEVMOUNT = {sda: "/", sdb: "/b", sdc: "/c", sdd: "/d", sde: "/e", nvme0n1: "/n2", nvme1n1: "/n4"};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function fb(n, d = 1) { if (n == null) return "—"; const u = ["B","KB","MB","GB","TB"]; let i = 0; n = Number(n);
@@ -1430,7 +1429,7 @@ function render(s) {
 
   const ROLE720 = {"/": "OS (boot RAID 5, 4 TB disks, DEGRADED: 3 of 4)", "/raid6": "backup copy of the @@CFG:MAIN@@ (RAID 6, 4×18 TB)"};   // 2026-09-30
   const DEV720 = {sda: "/raid6 (RAID 6)", sdb: "/ (RAID 5 boot)"};
-  const both = [["@@CFG:MAIN@@", f, ROLE, DEVMOUNT], ["@@CFG:NODE@@", rf, ROLE720, DEV720]];
+  const both = [["@@CFG:MAIN@@", f, ROLE, {}], ["@@CFG:NODE@@", rf, ROLE720, DEV720]];
   const HDR = (s.health || {}).drives || [];
   const MEMBERS720 = {sdb: [3, 6, 7], sda: [0, 1, 4, 5]};
   const diskTemp = (host, d) => {
@@ -1449,16 +1448,22 @@ function render(s) {
     for (const [d, m] of Object.entries(devs)) devOf[String(m).split(" ")[0]] = d;
     const io = F.disks || {}, seen = new Set(), rows = [];
     const row = (m, d) => {
+      const first = !!d && !seen.has(d);   // two mounts on one disk: its read/write rate shows once
       if (d) seen.add(d);
-      const u = m && m.usage, used = u && !m.shutdown ? (u.total - u.free) / u.total : null, v = d ? io[d] : null;
+      // like df: used over (used + available), so blocks reserved for root don't count as used
+      const u = m && m.usage, used = u && !m.shutdown ? (u.used != null ? u.used / (u.used + u.free) : (u.total - u.free) / u.total) : null, v = d && first ? io[d] : null;
+      const pct = used == null ? "" : Math.ceil(used * 100) + "%";
+      const role = !m ? "" : [roles[m.mount], m.source ? "network mount" : "", m.ro ? "read-only" : "", (m.also || []).length ? "also " + m.also.join(", ") : ""].filter(Boolean).join(" · ");
+      const dev = (m && m.source) || (m && m.part) || d || "—";
       const usedCell = !m ? '<td class="muted">no mount</td>' : !m.mounted ? '<td class="muted">not mounted</td>'
         : used == null ? `<td><span class="pill failed">${m.shutdown ? "shut down" : "unreadable"}</span></td>`
-        : `<td title="${fb(u.total - u.free)} used of ${fb(u.total)} (${(used * 100).toFixed(0)}%)">${bar(used, used > .9 ? "bad" : used > .75 ? "warn" : "")}<span class="muted">${(used * 100).toFixed(0)}% of ${fb(u.total, 1)}</span></td>`;
-      return `<tr><td class="mono">${host}</td><td class="mono">${m ? esc(m.mount) : "—"}</td><td>${m ? esc(roles[m.mount] || "") : ""}</td><td class="mono">${esc(d || "—")}</td>
+        : `<td title="${fb(u.used ?? u.total - u.free)} used of ${fb(u.total)} (${pct})${m.source ? esc(` · on ${m.source}, shared with every mount from there`) : ""}">${bar(used, used > .9 ? "bad" : used > .75 ? "warn" : "")}<span class="muted">${pct} of ${fb(u.total, 1)}</span></td>`;
+      const ditto = d && !first ? "″" : "—";
+      return `<tr><td class="mono">${host}</td><td class="mono">${m ? esc(m.mount) : "—"}</td><td>${esc(role)}</td><td class="mono">${esc(dev)}${m && m.model ? `<br><span class="muted">${esc(m.model)}</span>` : ""}</td>
         ${usedCell}<td class="num">${used == null ? "" : fb(u.free)}</td>
-        <td class="num">${v ? rate(v.read) : "—"}</td><td class="num">${v ? rate(v.write) : "—"}</td>${diskTemp(host, d)}</tr>`;
+        <td class="num">${v ? rate(v.read) : ditto}</td><td class="num">${v ? rate(v.write) : ditto}</td>${first || !m ? diskTemp(host, d) : '<td class="num muted">—</td>'}</tr>`;
     };
-    for (const m of F.mounts || []) rows.push(row(m, devOf[m.mount]));
+    for (const m of F.mounts || []) rows.push(row(m, m.source ? null : m.dev || devOf[m.mount]));
     for (const d of Object.keys(io).sort()) if (!seen.has(d)) rows.push(row(null, d));
     return rows;
   }).join("");
