@@ -7,7 +7,7 @@ import {
   inject,
   untracked,
 } from '@angular/core';
-import { GridItemHTMLElement, GridStack } from 'gridstack';
+import { GridItemHTMLElement, GridStack, GridStackNode } from 'gridstack';
 import { BoardLayout, CELL, COLUMNS, Item, STACK_BELOW } from '../../core/layout/board-layout';
 
 /**
@@ -110,8 +110,58 @@ export class Board {
         if (!x0 && !y0) [x0, y0] = [px, py];
         armed ||= Math.hypot(px - x0, py - y0) > ARM;
       };
+      // Where a dragged card lands follows the pointer (owner 2026-11-18: "it looks to be trying to fit the entire card
+      // before snapping"). gridstack places by the dragged card's top-left corner and only passes another card once
+      // the whole card's rectangle covers half of it, which with cards nearly a window tall is far from the pointer.
+      // So a drag's placement step is replaced: the card goes in the column under the pointer (keeping the column of
+      // the card that was grabbed), below every card in those columns whose middle is above the pointer and above
+      // every one whose middle is below it; cards in its way move down, then everything rises into free space.
+      let downX = 0,
+        grabCol = 0;
+      this.el.addEventListener('mousedown', (e) => (downX = e.clientX), true);
+      type N = GridStackNode & { _dirty?: boolean; _lastUiPosition?: unknown };
+      const g = grid as unknown as {
+        _dragOrResize(el: HTMLElement, ev: Event, ui: { position: unknown }, n: N, cw: number, ch: number): void;
+        _updateContainerHeight(): void;
+        _writePosAttr(el: HTMLElement, n: N): void;
+        engine: { nodes: N[]; _packNodes(): { _notify(): void } };
+      };
+      const place = g._dragOrResize.bind(grid);
+      g._dragOrResize = (el, ev, ui, n, cw, ch) => {
+        if (ev.type !== 'drag' || !(px || py)) return place(el, ev, ui, n, cw, ch);
+        const w = n.w ?? 1;
+        const box = this.el.getBoundingClientRect();
+        const x = Math.max(0, Math.min(COLUMNS - w, Math.floor((px - box.left) / cw) - grabCol));
+        const row = (py - box.top) / ch;
+        const others = g.engine.nodes.filter((o) => o !== n);
+        const shares = (o: N) => o.x! < x + w && x < o.x! + o.w!;
+        const y = Math.max(
+          0,
+          ...others.filter((o) => shares(o) && o.y! + o.h! / 2 <= row).map((o) => o.y! + o.h!),
+        );
+        if (n.x === x && n.y === y) return;
+        Object.assign(n, { x, y, _dirty: true });
+        // push down whatever now overlaps, top to bottom, so the order below is kept
+        const placed: N[] = [n];
+        const hit = (a: N, b: N) =>
+          a.x! < b.x! + b.w! && b.x! < a.x! + a.w! && a.y! < b.y! + b.h! && b.y! < a.y! + a.h!;
+        for (const o of others.sort((a, b) => a.y! - b.y! || a.x! - b.x!)) {
+          for (let c = placed.find((p) => hit(o, p)); c; c = placed.find((p) => hit(o, p)))
+            Object.assign(o, { y: c.y! + c.h!, _dirty: true });
+          placed.push(o);
+        }
+        g.engine._packNodes()._notify();
+        n._lastUiPosition = ui.position;
+        g._updateContainerHeight();
+        g._writePosAttr(ev.target as HTMLElement, n);
+      };
       grid.on('dragstart', (_e, item) => {
         [px, py, x0, y0, armed] = [0, 0, 0, 0, false];
+        const cw = grid.cellWidth();
+        grabCol = Math.max(
+          0,
+          Math.min((item.gridstackNode?.w ?? 1) - 1, Math.floor((downX - item.getBoundingClientRect().left) / cw)),
+        );
         // the lowest page y the drag may scroll to: the bottom of every other card, plus room for this one
         floor =
           Math.max(
