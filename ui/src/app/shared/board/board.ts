@@ -15,7 +15,7 @@ import { BoardLayout, CELL, COLUMNS, Item, STACK_BELOW } from '../../core/layout
  * .grid-stack-item children of this element; gridstack only positions them. 3 columns (owner 2026-11-16): drag a card
  * from anywhere on it into any column, under another card too ('top' mode: cards rise into free space above them but
  * keep their column; a dashed placeholder shows where it lands). Resize snaps to 1-3 columns; the side edges change
- * only the width (the card still fits its content), the corner also fixes the height (capped at the window's).
+ * only the width (the card still fits its content), the corner also fixes the height, with no limit.
  * Below STACK_BELOW px the grid is one column and nothing moves; widening again re-applies the saved view, so
  * narrowing and widening the window never reshuffles it.
  * gridstack's CSS is imported in styles.css (the app renders in a shadow root with one stylesheet).
@@ -26,6 +26,11 @@ const ARROW = (d: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
 /** px the pointer must move from where a drag began before the edge zone scrolls (a card grabbed low doesn't) */
 const ARM = 24;
+/** no height limit: set before gridstack's resizestart, which reads the limit for the drag */
+const uncap = (el: GridItemHTMLElement) => {
+  delete el.gridstackNode!.maxH;
+  el.removeAttribute('gs-max-h');
+};
 /** a press on these starts no drag: they keep their own clicks, selection and scrolling */
 const DRAG_CANCEL =
   'button, a, input, textarea, select, label, [role=button], mat-button-toggle, table, pre, code, .seg, .views-panel';
@@ -67,7 +72,10 @@ export class Board {
         const t = e.target as HTMLElement;
         if (!t.classList?.contains('ui-resizable-se')) return;
         const item = t.closest<GridItemHTMLElement>('.grid-stack-item');
-        if (item?.gridstackNode) item.gridstackNode.sizeToContent = false;
+        if (item?.gridstackNode) {
+          item.gridstackNode.sizeToContent = false;
+          uncap(item);
+        }
         item?.classList.remove('size-to-content');
       };
       this.el.addEventListener('pointerdown', unfit, true);
@@ -249,6 +257,11 @@ export class Board {
     const items = [...this.layout.items()].sort(
       (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
     );
+    // gridstack's load keeps a fitted card's current height over the one given, so unfit those first
+    for (const el of this.grid!.getGridItems()) {
+      const n = el.gridstackNode!;
+      if (items.some((it) => it.id === n.id && it.h)) n.sizeToContent = false;
+    }
     this.grid!.load(
       items.map((it) => ({
         id: it.id,
@@ -262,15 +275,16 @@ export class Board {
     this.fit();
   }
 
-  /** caps every card at the window's height, and locks moving and resizing in the one-column phone layout */
+  /** caps a card fitting its content at the window's height (any taller scrolls inside it); a card sized by hand can
+   * be any height (owner 2026-11-18). Locks moving and resizing in the one-column phone layout. */
   private fit() {
     const grid = this.grid;
     if (!grid) return;
     const maxH = Math.max(10, Math.floor((window.innerHeight - 120) / CELL));
     for (const el of grid.getGridItems()) {
       const n = el.gridstackNode!;
-      if (n.maxH !== maxH)
-        grid.update(el, { maxH, ...(n.h && n.h > maxH && !n.sizeToContent ? { h: maxH } : {}) });
+      if (!n.sizeToContent) uncap(el);
+      else if (n.maxH !== maxH) grid.update(el, { maxH });
       if (n.sizeToContent) grid.resizeToContent(el);
     }
     const stacked = grid.getColumn() !== COLUMNS;
