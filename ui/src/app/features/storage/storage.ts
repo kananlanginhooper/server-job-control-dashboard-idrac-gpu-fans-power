@@ -81,13 +81,13 @@ export class Storage {
           // like df: used over (used + available), so blocks reserved for root don't count as used
           used = u && !m.shutdown ? (u.used != null ? u.used / (u.used + u.free) : (u.total - u.free) / u.total) : null,
           v = d && first ? io[d] : null;
+        const g: any[] = m?.group || (m ? [m] : []);
         const role = !m
           ? ''
           : [
               roles[m.mount],
-              m.source ? 'network mount' : '',
-              m.ro ? 'read-only' : '',
-              m.also?.length ? 'also ' + m.also.join(', ') : '',
+              m.source ? (g.length > 1 ? `network mounts (${g.length}), one filesystem` : 'network mount') : '',
+              g.every((x) => x.ro) ? 'read-only' : '',
             ]
               .filter(Boolean)
               .join(' · ');
@@ -106,10 +106,14 @@ export class Storage {
                 };
         return {
           host,
-          mount: m ? m.mount : '—',
+          mounts: m ? g.map((x) => x.mount) : ['—'],
+          mountTip: m?.also?.length ? 'also mounted at ' + m.also.join(', ') : '',
+          also: m?.also?.length || 0,
           role,
-          dev: m?.source || (m?.part ?? d) || '—',
-          model: m?.model || '',
+          dev: m?.source ? m.share : (m?.part ?? d) || '—',
+          devTip: m?.source
+            ? g.map((x) => `${x.mount} ← ${x.source}${x.ro ? ' (read-only)' : ''}`).join('\n')
+            : m?.model || '',
           used: usedCell as any,
           free: used == null ? '' : fb(u.free),
           rd: v ? rate(v.read) : d && !first ? '″' : '—',
@@ -117,7 +121,27 @@ export class Storage {
           temp: first ? diskTemp(host, d) : null,
         };
       };
-      for (const m of F.mounts || []) rows.push(row(m, m.source ? null : m.dev || devOf[m.mount] || null));
+      // network mounts of one filesystem (same server, same size) share one row: their use is the same number
+      const ms: any[] = [],
+        net: Record<string, any> = {};
+      for (const m of F.mounts || []) {
+        if (!m.source) {
+          ms.push(m);
+          continue;
+        }
+        const [srv, path] = [m.source.split(':')[0], m.source.slice(m.source.indexOf(':') + 1)];
+        const k = srv + '|' + (m.usage?.total ?? m.mount);
+        const n = net[k];
+        if (!n) {
+          ms.push((net[k] = { ...m, group: [m], share: m.source, dir: path }));
+          continue;
+        }
+        n.group.push(m);
+        while (n.dir.length > 1 && !(path + '/').startsWith(n.dir + '/'))
+          n.dir = n.dir.slice(0, n.dir.lastIndexOf('/')) || '/';
+        n.share = `${srv}:${n.dir}`;
+      }
+      for (const m of ms) rows.push(row(m, m.source ? null : m.dev || devOf[m.mount] || null));
       for (const d of Object.keys(io).sort()) if (!seen.has(d)) rows.push(row(null, d));
       return rows;
     });

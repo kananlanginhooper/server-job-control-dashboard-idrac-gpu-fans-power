@@ -671,6 +671,16 @@ th.num {
 .scroll {
   overflow-x: auto;
 }
+/* storage: wrap the role at spaces only, keep paths whole; a narrow card scrolls sideways */
+#storage {
+  overflow-wrap: normal;
+}
+#storage td.mono {
+  white-space: nowrap;
+}
+#storage td:nth-child(3) {
+  min-width: 9em;
+}
 .servers {
   display: grid;
   gap: 16px;
