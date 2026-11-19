@@ -65,7 +65,7 @@ import { ViewsBar } from './shared/board/views-bar';
       <!-- views left, title centered, time range right ({{ S.owner }} 2026-11-06) -->
       <app-views-bar />
       <div class="htitle">
-        <h1>Data Recovery &amp; Intake</h1>
+        <h1>Server Status</h1>
         <span class="sub"
           >{{ S.main }} ·
           <span id="upd">
