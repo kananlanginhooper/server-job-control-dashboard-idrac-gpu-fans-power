@@ -1272,8 +1272,8 @@ function render(s) {
   const ENV = [
     {g: "power", fmt: Wf, axis: v => v ? Math.round(v) + " W" : "0", minMax: 100, yRange: [0, 300], yStep: 50, hosts: PWR, lab: k => k === "laptop" ? "laptop (CPU+GPU on AC)" : k === "@@CFG:NODE@@_gpu" ? "RTX @@CFG:node_gpu_num@@ Ti (in @@CFG:NODE@@)" : k === "@@CFG:BOX@@_gpu" ? "@@CFG:box_gpu@@ (in @@CFG:BOX_NAME@@)" : k === "laptop_gpu" ? "RTX 4060 (in laptop)" : k === "@@CFG:NODE@@" ? "@@CFG:NODE@@ (without GPU)" : k === "@@CFG:MAIN@@_peak" ? "@@CFG:MAIN@@ peak (iDRAC, sub-second)" : k === "@@CFG:NODE@@_peak" ? "@@CFG:NODE@@ peak (iDRAC, incl. GPU)" : k},
     {g: "temp", fmt: Cf, axis: v => Math.round(v) + "°", minMax: 40, yRange: [45, 65],
-     hosts: [...HOSTS.slice(0, 2), ["@@CFG:NODE@@_gpu", "RTX @@CFG:node_gpu_num@@ Ti", "--s2", "dot"]],
-     lab: k => k === "@@CFG:NODE@@_gpu" ? "RTX @@CFG:node_gpu_num@@ Ti (in @@CFG:NODE@@)" : k === "laptop_gpu" ? "RTX 4060 (in laptop)" : k === "laptop" ? "laptop hottest" : k + " hottest"},
+     hosts: [...HOSTS.slice(0, 2), ["@@CFG:NODE@@_gpu", "RTX @@CFG:node_gpu_num@@ Ti", "--s2", "dot"], ["laptop", "laptop", "--t5", false], ["laptop_gpu", "laptop GPU", "--t5", "dot"]],
+     lab: k => k === "@@CFG:NODE@@_gpu" ? "RTX @@CFG:node_gpu_num@@ Ti (in @@CFG:NODE@@)" : k === "laptop_gpu" ? "RTX 4060 (in laptop)" : k === "laptop" ? "laptop hottest (CPU, GPU, board)" : k + " hottest"},
     {g: "fan", fmt: Rf, axis: v => v ? (v / 1000).toFixed(0) + "k" : "0", minMax: 2000, yRange: [4000, 8000], yStep: 1000, hosts: [...HOSTS.slice(0, 2).map(([k, l, c]) => [k, l, c, false]), ["@@CFG:NODE@@_gpu", "RTX @@CFG:node_gpu_num@@ Ti", "--s2", "dot"]],
      lab: k => k === "laptop" ? "laptop (faster of CPU/GPU fan)" : k === "@@CFG:NODE@@_gpu" ? "RTX @@CFG:node_gpu_num@@ Ti (in @@CFG:NODE@@)" : k + " (fastest of 6 fans)"}];
   const others = (g, p) => ENV.filter(e => e.g !== g).flatMap(e => e.hosts.filter(([k]) => p[e.g + "_" + k] != null).map(([k, l]) => [`${l} ${e.g === "temp" ? "hottest" : e.g}`, e.fmt(p[e.g + "_" + k])]));
@@ -1286,7 +1286,7 @@ function render(s) {
           const mx = Math.max(0, ...(sn.fantable || []).filter(r => r.Active).map(r => r.CurrentFanMaxSpeed || 0));
           return fans.length && mx ? ` · ${Math.round(fans.reduce((a, f) => a + f.rpm, 0) / fans.length / mx * 100)}% of ${num(mx)}` : ""; })() : "";
     $("#leg-" + e.g).innerHTML = e.hosts.map(([k, l, c, d]) => `<span>${keyI(c, d)}${esc(e.lab(k))} <b>${e.fmt(envNow[e.g + "_" + k])}</b><span class="muted">${fanPct(k)}</span></span>`).join("");
-    const yr = e.g === "power" ? (fitRange(envPts.flatMap(p => e.hosts.map(([k]) => p["power_" + k])), 20, 50) || e.yRange) : e.yRange;
+    const yr = e.g === "power" || e.g === "temp" ? (fitRange(envPts.flatMap(p => e.hosts.map(([k]) => p[e.g + "_" + k])), ...(e.g === "power" ? [20, 50] : [3, 5])) || e.yRange) : e.yRange;   // the laptop runs far hotter than the servers
     lineChart($("#lc-env-" + e.g), {id: "env-" + e.g, points: envPts, range_s: SPEED.range, bucket_s: envLiveMode ? 5 : (SER.env.bucket_s || 60),
       height: 170, left: 56, right: 92, fmt: e.fmt, axis: e.axis, minMax: e.minMax, yRange: yr, yStep: e.yStep, yMaxGrid: e.yMaxGrid, yLabelStep: e.yLabelStep, empty: "collecting…", label: `${e.g} by computer, last ${RLABEL[SPEED.range] || ""}`,
       series: e.hosts.map(([k, l, c, d]) => ({k: e.g + "_" + k, label: e.lab(k), short: l, color: c, dash: d})),
@@ -1360,7 +1360,7 @@ function render(s) {
   $("#env-range").textContent = "last " + (RLABEL[SPEED.range] || "");
   const avgE = k => { const v = envPts.map(p => p[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   $("#power-foot").textContent = `Averages over the view: power @@CFG:MAIN@@ ${Wf(avgE("power_@@CFG:MAIN@@"))}, @@CFG:NODE@@ ${Wf(avgE("power_@@CFG:NODE@@"))}.`
-    + ` All three charts are WORST CASE: power is the highest DCMI reading (read every 1 s), temperature the hottest sensor, fan speed the fastest fan; every 5 s point, stored minute and longer bucket keeps the highest value (PSU voltage keeps the lowest). DCMI's own reading is a 1 s average, so sub-second inrush is not visible. Servers: wall power (IPMI DCMI); the @@CFG:NODE@@ line is wall power minus the RTX @@CFG:node_gpu_num@@ Ti board power (its dotted line), so PSU losses on the GPU's share stay in the @@CFG:NODE@@ line. Temperatures: hottest of CPUs, exhaust, drives and NVMe (the GPU has its own dotted line), the fastest of 6 fans. Dotted lines are the RTX @@CFG:node_gpu_num@@ Ti. The laptop isn't charted here (it's on its own card). Sampled every 5 s (10m view).`;
+    + ` All three charts are WORST CASE: power is the highest DCMI reading (read every 1 s), temperature the hottest sensor, fan speed the fastest fan; every 5 s point, stored minute and longer bucket keeps the highest value (PSU voltage keeps the lowest). DCMI's own reading is a 1 s average, so sub-second inrush is not visible. Servers: wall power (IPMI DCMI); the @@CFG:NODE@@ line is wall power minus the RTX @@CFG:node_gpu_num@@ Ti board power (its dotted line), so PSU losses on the GPU's share stay in the @@CFG:NODE@@ line. Temperatures: hottest of CPUs, exhaust, drives and NVMe (the GPU has its own dotted line), the fastest of 6 fans. Dotted lines are the RTX @@CFG:node_gpu_num@@ Ti. The laptop is on the temperature chart only (hottest of its CPU, GPU and board, its GPU dotted); its power and fans are on its own card. Sampled every 5 s (10m view).`;
 
   const r7 = s.@@CFG:NODE@@ || {}, rs = rem.rsync, rdest = r7.dest_bytes || {}, rrate = r7.rate || {};
   const ar = (s.db || {}).archives, infl = (rf.archiver || {});

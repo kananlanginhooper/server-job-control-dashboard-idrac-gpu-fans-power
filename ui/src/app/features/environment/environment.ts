@@ -51,7 +51,7 @@ function fanEventRow(host: string, t: number, m: string) {
 }
 
 const FOOT = t(
-  " All three charts are WORST CASE: power is the highest DCMI reading (read every 1 s), temperature the hottest sensor, fan speed the fastest fan; every 5 s point, stored minute and longer bucket keeps the highest value (PSU voltage keeps the lowest). DCMI's own reading is a 1 s average, so sub-second inrush is not visible. Servers: wall power (IPMI DCMI); the {node} line is wall power minus the {nodeGpu} board power (its dotted line), so PSU losses on the GPU's share stay in the {node} line. Temperatures: hottest of CPUs, exhaust, drives and NVMe (the GPU has its own dotted line), the fastest of 6 fans. Dotted lines are the {nodeGpu}. The laptop isn't charted here (it's on its own card). Sampled every 5 s (10m view).",
+  " All three charts are WORST CASE: power is the highest DCMI reading (read every 1 s), temperature the hottest sensor, fan speed the fastest fan; every 5 s point, stored minute and longer bucket keeps the highest value (PSU voltage keeps the lowest). DCMI's own reading is a 1 s average, so sub-second inrush is not visible. Servers: wall power (IPMI DCMI); the {node} line is wall power minus the {nodeGpu} board power (its dotted line), so PSU losses on the GPU's share stay in the {node} line. Temperatures: hottest of CPUs, exhaust, drives and NVMe (the GPU has its own dotted line), the fastest of 6 fans. Dotted lines are the {nodeGpu}. The laptop is on the temperature chart only (hottest of its CPU, GPU and board, its GPU dotted); its power and fans are on its own card. Sampled every 5 s (10m view).",
 );
 
 @Component({
@@ -170,8 +170,20 @@ export class Env {
         minMax: 40,
         yRange: [45, 65],
         yStep: undefined,
-        hosts: [...HOSTS, [t('{node}_gpu'), t('{nodeGpu}'), '--s2', 'dot']] as H[],
-        lab: (k: string) => (k === t('{node}_gpu') ? t('{nodeGpu} (in {node})') : k + ' hottest'),
+        hosts: [
+          ...HOSTS,
+          [t('{node}_gpu'), t('{nodeGpu}'), '--s2', 'dot'],
+          ['laptop', 'laptop', '--t5', false],
+          ['laptop_gpu', 'laptop GPU', '--t5', 'dot'],
+        ] as H[],
+        lab: (k: string) =>
+          k === t('{node}_gpu')
+            ? t('{nodeGpu} (in {node})')
+            : k === 'laptop'
+              ? 'laptop hottest (CPU, GPU, board)'
+              : k === 'laptop_gpu'
+                ? 'RTX 4060 (in laptop)'
+                : k + ' hottest',
       },
       {
         g: 'fan',
@@ -222,6 +234,7 @@ export class Env {
         val: e.fmt(envNow[e.g + '_' + k]),
         note: e.g === 'fan' ? fanPct(k) : '',
       }));
+      // power and temperature fit their lines (the laptop runs far hotter than the servers)
       const yr =
         e.g === 'power'
           ? fitRange(
@@ -229,7 +242,13 @@ export class Env {
               20,
               50,
             ) || e.yRange
-          : e.yRange;
+          : e.g === 'temp'
+            ? fitRange(
+                envPts.flatMap((p) => e.hosts.map(([k]) => p['temp_' + k])),
+                3,
+                5,
+              ) || e.yRange
+            : e.yRange;
       const opts: LineOpts = {
         id: 'env-' + e.g,
         points: envPts,

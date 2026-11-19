@@ -26,6 +26,8 @@ SERIES = [
     ("temp_{main}", "main", "hottest_c"),
     ("temp_{node}", "node", "hottest_c"),
     ("temp_{node}_gpu", "node", "gpu0_temp_c"),
+    ("temp_laptop", "laptop", "hottest_c"),
+    ("temp_laptop_gpu", "laptop", "gpu0_temp_c"),
     ("fan_{main}", "main", "bmc_fan_max_rpm"),
     ("fan_{node}", "node", "bmc_fan_max_rpm"),
     ("fan_{node}_gpu", "node", "gpu0_fan_rpm"),
@@ -65,6 +67,8 @@ def metric(v: dict, name: str):
         return _max(f.get("rpm") for f in ip.get("fans") or [])
     if name.startswith("psu_volt:"):
         return ((ip.get("psu") or {}).get(name.split(":", 1)[1]) or {}).get("v")
+    if name == "hottest_c" and v.get("host") == "laptop":  # the hub's laptop_temp_max: every sensor (CPU, GPU, board) and the GPU card
+        return _max([t.get("c") for t in (v.get("sensors") or {}).get("temps") or []] + [card.get("temp")])
     if name == "hottest_c":  # the hub's host_temp_max: BMC temps but Inlet, CPU packages, NVMe, SMART drives
         ts = (v.get("sensors") or {}).get("temps") or []
         return _max([t.get("c") for t in ip.get("temps") or [] if t.get("name") != "Inlet"]
