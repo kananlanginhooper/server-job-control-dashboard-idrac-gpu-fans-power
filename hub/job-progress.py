@@ -199,22 +199,11 @@ def feed(name, job, unit, rate, state, total=None):
                    shell=True, input=json.dumps(doc).encode(), timeout=20)
 
 
-def q1(sql):
-    v = sh(f"mysql --defaults-file=$HOME/.{CFG['db_cnf_name']} recovery -N -e \"{sql}\"").strip()
-    return float(v) if v.replace(".", "", 1).isdigit() else 0.0
-
-
-def unit_state(*units):
-    return "running" if any(sh(f"systemctl is-active {u}").strip() == "active" for u in units) else "paused"
-
-
-feed("video-labels", "video GPU labels per 5-min window (qwen2.5vl:7b)", "windows",
-     q1("select count(*) from video_segment where created_at > now() - interval 300 second") / 300, unit_state("video-pipeline@vlm"))
-feed("video-text", "video transcript labels + sensitivity (qwen2.5vl:7b)", "videos",
-     q1("select count(*) from video_description where source='text' and created_at > now() - interval 300 second") / 300, unit_state("video-pipeline@text"))
+# 2026-11-20: the two video rate feeds (labels, transcript labels) are gone: their titles named one flow and model and
+# went stale as the flows changed (owner); their files are removed below
 # whisper-the GPU node feed retired 2026-10-15: the GPU node transcription runs on the GPU now and whisper_server.py writes its own feed
 # (gpu-job.whisper-gpu-<port>.json); this one duplicated it under the old "CPU (3 workers)" title.
-subprocess.run(f"ssh -o BatchMode=yes -o ConnectTimeout=5 -o IdentitiesOnly=yes -i {CFG['ssh_key']} {CFG['ssh_user_at']}{CFG['node_ip']} 'rm -f /dev/shm/gpu-job.video.json /dev/shm/gpu-job.whisper-{NODE}.json'",
+subprocess.run(f"ssh -o BatchMode=yes -o ConnectTimeout=5 -o IdentitiesOnly=yes -i {CFG['ssh_key']} {CFG['ssh_user_at']}{CFG['node_ip']} 'rm -f /dev/shm/gpu-job.video.json /dev/shm/gpu-job.whisper-{NODE}.json /dev/shm/gpu-job.video-labels.json /dev/shm/gpu-job.video-text.json'",
                shell=True, timeout=20)   # replaced by the per-job feeds above
 
 json.dump(keep, open(STATE, "w"))
