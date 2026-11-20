@@ -67,7 +67,7 @@ import { ViewsBar } from './shared/board/views-bar';
       <div class="htitle">
         <h1>Server Status</h1>
         <span class="sub"
-          >{{ S.main }} + {{ S.node }} ·
+          >
           <span id="upd">
             @if (upd(); as u) {
               @if (u.stale) {
