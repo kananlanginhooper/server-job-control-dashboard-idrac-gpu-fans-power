@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { BoardLayout } from '../../core/layout/board-layout';
 
 /**
@@ -9,7 +16,7 @@ import { BoardLayout } from '../../core/layout/board-layout';
 @Component({
   selector: 'app-views-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'open.set(false)' },
+  host: { '(document:keydown.escape)': 'open.set(false)', '(document:pointerdown)': 'outside($event)' },
   template: `
     <div class="seg views" role="group" aria-label="Saved views">
       @for (n of layout.names(); track n) {
@@ -33,7 +40,7 @@ import { BoardLayout } from '../../core/layout/board-layout';
           } @else {
             Three columns: drag a card from anywhere on it (not its buttons, links or tables) into
             any column, under another card too. Its left or right edge sets the width (1-3 columns);
-            the lower-right corner also fixes its height (at most the window's). Other cards fit
+            the lower-right corner also fixes its height, with no limit. Other cards fit
             their content and rise into free space above them.
           }
           Views are saved in this browser only.
@@ -85,6 +92,7 @@ import { BoardLayout } from '../../core/layout/board-layout';
 })
 export class ViewsBar {
   readonly layout = inject(BoardLayout);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly open = signal(false);
   readonly name = signal('');
   readonly text = signal('');
@@ -96,6 +104,11 @@ export class ViewsBar {
     return !!n && n !== this.layout.active() && !this.layout.names().includes(n);
   });
 
+  /** a press anywhere outside the button and panel closes the panel (owner 2026-11-19); the page renders in a shadow
+   * root, so a document listener's target is the app root: the composed path holds the real one */
+  outside(e: Event) {
+    if (this.open() && !e.composedPath().includes(this.host.nativeElement)) this.open.set(false);
+  }
   toggle() {
     this.open.update((o) => !o);
     this.name.set(this.layout.active());

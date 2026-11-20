@@ -15,7 +15,10 @@ import {
   tipTitle,
 } from './chart-kit';
 
-const TITLE = 16,
+// title band above each track: the title, then room for the top axis label, which sits half above the grid (owner
+// 2026-11-19: "too tight")
+const TOP = 6, // clear of the legend above
+  TITLE = 26,
   GAP = 14,
   B = 24;
 
@@ -45,7 +48,7 @@ export class TrackChart {
   private readonly h = chartHost();
 
   protected readonly height = computed(
-    () => this.opts().tracks.reduce((y, ln) => y + TITLE + ln.height + GAP, 0) - GAP + B,
+    () => this.opts().tracks.reduce((y, ln) => y + TITLE + ln.height + GAP, TOP) - GAP + B,
   );
 
   protected readonly options = computed(() => {
@@ -65,7 +68,7 @@ export class TrackChart {
     const ticks = Math.max(2, Math.min(6, Math.floor((W - L - R) / 110)));
     const last = o.tracks.length - 1;
 
-    let y = 0;
+    let y = TOP;
     const grids: any[] = [],
       xAxes: any[] = [],
       yAxes: any[] = [],
@@ -94,7 +97,7 @@ export class TrackChart {
       titles.push({
         type: 'text',
         left: L,
-        top: top - 16,
+        top: top - TITLE,
         silent: true,
         style: { text: ln.title, fill: ink, fontSize: 11, fontWeight: 600 },
       });
