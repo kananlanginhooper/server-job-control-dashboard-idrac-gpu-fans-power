@@ -103,53 +103,103 @@ export class LiveHw {
     const temps: any[] = id.temps || [],
       fans: any[] = id.fans || [],
       cards: any[] = (s.gpu || {}).cards || [];
+    // hosts without a BMC (the laptop, the desktop) report their own sensors instead (owner 2026-11-20: show what
+    // each one has, nothing it lacks)
+    const sy = s.system || {},
+      st: any[] = (s.sensors || {}).temps || [],
+      sfans: any[] = ((s.sensors || {}).fans || []).filter((f: any) => f.rpm > 0);
     const hot = (kind: string, c: number) =>
       lim[kind] != null && c >= lim[kind] - 2 ? (c >= lim[kind] ? 'bad' : 'warn') : '';
-    const cpu = temps.filter((t) => /^CPU/.test(t.name)),
-      cpuMax = cpu.length ? Math.max(...cpu.map((t) => t.c)) : null;
+    const maxC = (ts: any[]) => (ts.length ? Math.max(...ts.map((t) => t.c)) : null);
+    const cpuMax =
+      maxC(temps.filter((t) => /^CPU/.test(t.name))) ??
+      maxC(
+        st.filter(
+          (t) =>
+            (t.chip === 'lenovo' && t.label === 'cpu') ||
+            (t.chip === 'k10temp' && /^(Tctl|Tccd)/.test(t.label)) ||
+            (t.chip === 'coretemp' && /^Package/.test(t.label)),
+        ),
+      );
     const exh = temps.find((t) => t.name === 'Exhaust'),
-      inlet = temps.find((t) => t.name === 'Inlet');
-    const rpm = fans.length ? Math.max(...fans.map((f) => f.rpm)) : null;
+      inlet = temps.find((t) => t.name === 'Inlet'),
+      board = exh
+        ? null
+        : st.find((t) => (t.chip === 'lenovo' && t.label === 'board') || t.label === 'SYSTIN');
+    const rpm = fans.length
+      ? Math.max(...fans.map((f) => f.rpm))
+      : sfans.length
+        ? Math.max(...sfans.map((f) => f.rpm))
+        : null;
+    // no wall meter: CPU package + GPUs, or the battery draw when unplugged
+    const pkg = sy.power?.cpu_pkg_w ?? (Object.values(sy.cpu_pkg_w || {}) as number[])[0],
+      gpuW = cards.reduce((a, g) => a + (g.power_w || 0), 0),
+      parts = pkg != null ? pkg + gpuW : null,
+      bat = sy.power?.w;
     const kpis: { l: string; v: string; sub: string; c?: string; tip?: string }[] = [
-      {
-        l: 'Power',
-        v: pw.w != null ? `${Math.round(pw.w)} W` : '–',
-        sub:
-          pw.peak_5s != null
-            ? `5 s peak ${Math.round(pw.peak_5s)} · 5 min max ${Math.round(pw.max_5m)}`
-            : '',
-      },
-      {
-        l: 'Fans',
-        v: rpm != null ? `${(rpm / 1000).toFixed(1)}k RPM` : '–',
-        sub:
-          fc.fan_pct != null ? `${fc.fan_pct}% set · ${id.redundancy || ''}` : id.redundancy || '',
-      },
-      {
-        l: 'CPU',
-        v: cpuMax != null ? `${cpuMax}°C` : '–',
-        sub: lim.cpu != null ? `limit ${lim.cpu}°C` : '',
-        c: cpuMax != null ? hot('cpu', cpuMax) : '',
-      },
-      {
-        l: 'Exhaust',
-        v: exh ? `${exh.c}°C` : '–',
-        sub: inlet ? `inlet ${inlet.c}°C` : '',
-        c: exh ? hot('exhaust', exh.c) : '',
-      },
-    ];
+      pw.w != null
+        ? {
+            l: 'Power',
+            v: `${Math.round(pw.w)} W`,
+            sub:
+              pw.peak_5s != null
+                ? `5 s peak ${Math.round(pw.peak_5s)} · 5 min max ${Math.round(pw.max_5m)}`
+                : '',
+          }
+        : bat != null
+          ? { l: 'Power', v: `${Math.round(bat)} W`, sub: 'battery draw' }
+          : parts != null
+            ? {
+                l: 'Power',
+                v: `${Math.round(parts)} W`,
+                sub: `CPU ${Math.round(pkg)}${cards.length ? ` + GPU ${Math.round(gpuW)}` : ''} W, no wall meter`,
+              }
+            : null,
+      rpm != null
+        ? {
+            l: 'Fans',
+            v: `${(rpm / 1000).toFixed(1)}k RPM`,
+            sub: fans.length
+              ? fc.fan_pct != null
+                ? `${fc.fan_pct}% set · ${id.redundancy || ''}`
+                : id.redundancy || ''
+              : `fastest of ${sfans.length}`,
+          }
+        : null,
+      cpuMax != null
+        ? {
+            l: 'CPU',
+            v: `${Math.round(cpuMax)}°C`,
+            sub: lim.cpu != null ? `limit ${lim.cpu}°C` : '',
+            c: hot('cpu', cpuMax),
+          }
+        : null,
+      exh
+        ? {
+            l: 'Exhaust',
+            v: `${exh.c}°C`,
+            sub: inlet ? `inlet ${inlet.c}°C` : '',
+            c: hot('exhaust', exh.c),
+          }
+        : board
+          ? { l: 'Board', v: `${Math.round(board.c)}°C`, sub: 'motherboard sensor' }
+          : null,
+    ].filter((k) => k != null);
     for (const g of cards)
       kpis.push({
         l: `GPU${cards.length > 1 ? ' ' + g.index : ''}`,
-        v: g.temp != null ? `${g.temp}°C` : '–',
-        sub: `${g.power_w != null ? Math.round(g.power_w) : '–'} / ${g.power_limit_w != null ? Math.round(g.power_limit_w) : '–'} W · ${g.util ?? '–'}%`,
+        v: g.temp != null ? `${Math.round(g.temp)}°C` : '–',
+        sub: `${g.power_w != null ? Math.round(g.power_w) : '–'}${g.power_limit_w != null ? ' / ' + Math.round(g.power_limit_w) : ''} W · ${g.util ?? '–'}%`,
         c: g.temp != null ? hot('gpu', g.temp) : '',
         tip: g.name,
       });
-    const psu = Object.entries(id.psu || {}).map(
-      ([k, p]: [string, any]) =>
-        `${k.toUpperCase()} ${/AC lost|fail/i.test(p.status || '') ? 'no AC' : p.v != null ? p.v + ' V' : 'ok'}`,
-    );
+    // a host with no BMC still sends empty PSU entries: only those with a reading count
+    const psu = Object.entries(id.psu || {})
+      .filter(([, p]: [string, any]) => p && (p.v != null || p.status))
+      .map(
+        ([k, p]: [string, any]) =>
+          `${k.toUpperCase()} ${/AC lost|fail/i.test(p.status || '') ? 'no AC' : p.v != null ? p.v + ' V' : 'ok'}`,
+      );
     if (psu.length)
       kpis.push({
         l: 'PSUs',

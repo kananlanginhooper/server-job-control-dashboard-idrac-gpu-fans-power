@@ -331,6 +331,20 @@ app-views-bar .seg.views {
 .grid-stack-item:hover > .ui-resizable-handle {
   opacity: 0.8;
 }
+/* the side edges set the width: a grip bar on each, so they read as handles too, not only the corner (owner
+   2026-11-20: "card resize is no longer something that is offered") */
+.grid-stack-item > .ui-resizable-e::after,
+.grid-stack-item > .ui-resizable-w::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 4px;
+  height: 40px;
+  margin-top: -20px;
+  border-radius: 2px;
+  background: var(--muted);
+}
 @media (pointer: coarse) {
   .gs-grab {
     height: 20px;
