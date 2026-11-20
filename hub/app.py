@@ -2234,10 +2234,12 @@ def slow_loop():
             dbs = with_timeout(db_query, 30, {"error": "mysql timeout"})
             roots = [q["dest_root"] for q in dbs.get("queue", []) if q.get("dest_root")]
             sizes = dest_sizes(roots)
+            # measured before taking the lock: du of an intake folder takes ~20 s, and /api/state waits on this lock
+            slow = {"dest_bytes": sizes, "scan_log": scan_log(), "at": time.time(),
+                    "intake": {k: du(v) for k, v in DU_TARGETS.items()}}
             with lock:
                 state["db"] = dbs
-                state["slow"] = {"dest_bytes": sizes, "scan_log": scan_log(), "at": time.time(),
-                                 "intake": {k: du(v) for k, v in DU_TARGETS.items()}}
+                state["slow"] = slow
             rem = compute_remaining()
             if rem:
                 t = int(time.time() // 60) * 60
@@ -2321,11 +2323,19 @@ class H(BaseHTTPRequestHandler):
         if self.gated():
             return
         if self.path.startswith("/api/state"):
+            # files and processes are read before taking the lock, which only covers the shared state (2026-11-20:
+            # every /api/state call waited behind the lock, for as long as a slow reader held it)
+            now_ = time.time()
+            tasks, locks, carve = tasks_list(now_), job_locks(), carve_progress()
+            files = {"roadmap": roadmap(), "tasks": tasks, "job_locks": job_status(locks, tasks, None, carve), "carve_progress": carve,
+                     "meeting": meeting_desired(), "gpu_switch": gpu_desired(), "dismissed": dismissed(), "quickcool": qc_desired(),
+                     "runprofile": {"desired": rp_desired(), MAIN: rp_file(), "hold": profile_hold()}, "limits": limits(),
+                     "page_ver": int(os.path.getmtime(os.path.join(HERE, "index.html")))}
             with lock:
                 s = {"fast": state["fast"], "slow": state["slow"], "db": state["db"], "updated": state["updated"],
                      NODE: dict(state[NODE], folders=NODE_FOLDERS), "remote": remote_view(), BOX: box_view(),
-                     "history": list(state["history"]), "roadmap": roadmap(), "now": time.time(), "remaining": remaining_state(),
-                     "laptop": laptop_view(), "health": state.get("health", {}), "lapjobs": state.get("lapjobs", {}), "env_live": list(env["live"]), "gpu_live": list(gpu_live["pts"]), f"{BOX}_gpu_live": list(box_gpu_live["pts"]), "laptop_gpu_live": list(laptop_gpu_live["pts"]), "tasks": tasks_list(time.time()), "offsite": OFFSITE["now"], "job_locks": job_status(job_locks(), tasks_list(time.time()), None, carve_progress()), "carve_progress": carve_progress(), "lapcheck": {"at": LAPCHECK["at"], "rows": LAPCHECK["rows"]}, "sel": state.get("sel"), "carve": carve_view(), "meeting": meeting_desired(), "gpu_switch": gpu_desired(), "dismissed": dismissed(), "quickcool": qc_desired(), "runprofile": {"desired": rp_desired(), MAIN: rp_file(), "hold": profile_hold()}, "limits": limits(), "page_ver": int(os.path.getmtime(os.path.join(HERE, "index.html"))), "emergencies": [e for e in EMERGENCIES if e.get("end") is None or time.time() - e["end"] < 86400]}
+                     "history": list(state["history"]), "now": time.time(), "remaining": remaining_state(),
+                     "laptop": laptop_view(), "health": state.get("health", {}), "lapjobs": state.get("lapjobs", {}), "env_live": list(env["live"]), "gpu_live": list(gpu_live["pts"]), f"{BOX}_gpu_live": list(box_gpu_live["pts"]), "laptop_gpu_live": list(laptop_gpu_live["pts"]), "offsite": OFFSITE["now"], "lapcheck": {"at": LAPCHECK["at"], "rows": LAPCHECK["rows"]}, "sel": state.get("sel"), "carve": carve_view(), **files, "emergencies": [e for e in EMERGENCIES if e.get("end") is None or time.time() - e["end"] < 86400]}
             s["claude"] = claude_status()
             self.send(200, json.dumps(s, default=str), "application/json")
         elif self.path.startswith("/api/powertarget"):   # published per-mode power target jobs scale to (2026-09-28)
